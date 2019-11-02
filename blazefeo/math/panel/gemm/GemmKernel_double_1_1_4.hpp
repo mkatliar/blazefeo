@@ -126,13 +126,17 @@ namespace blazefeo
         }
 
 
+        template <bool LeftSide, bool Upper, bool TransA>
+        void trsm(double * a) const;
+
+
     private:
         __m256d v_[4];
     };
 
 
     template <>
-    inline void GemmKernel<double, 1, 1, 4>::gemm<false, true>(double const * a, size_t sa, double const * b, size_t sb)
+    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::gemm<false, true>(double const * a, size_t sa, double const * b, size_t sb)
     {
         __m256d const a_v0 = _mm256_load_pd(a);
         v_[0] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b), v_[0]);
@@ -143,7 +147,7 @@ namespace blazefeo
 
 
     template <>
-    inline void GemmKernel<double, 1, 1, 4>::gemm<false, true>(double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::gemm<false, true>(double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
     {
         __m256d const a_v0 = _mm256_load_pd(a);
 
@@ -158,5 +162,33 @@ namespace blazefeo
 
         if (n > 3)
             v_[3] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 3), v_[3]);
+    }
+
+
+    template <>
+    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::trsm<false, false, true>(double * a) const
+    {
+        __m256d x[4];
+        x[0] = _mm256_load_pd(a + 0);
+        x[0] /= v_[0][0];
+        _mm256_store_pd(a + 0, x[0]);
+
+        x[1] = _mm256_load_pd(a + 4);
+        x[1] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][1], v_[0][1], v_[0][1], v_[0][1]), x[0], x[1]);
+        x[1] /= v_[1][1];
+        _mm256_store_pd(a + 4, x[1]);
+
+        x[2] = _mm256_load_pd(a + 8);
+        x[2] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][2], v_[0][2], v_[0][2], v_[0][2]), x[0], x[2]);
+        x[2] = _mm256_fnmadd_pd(_mm256_set_pd(v_[1][2], v_[1][2], v_[1][2], v_[1][2]), x[1], x[2]);
+        x[2] /= v_[2][2];
+        _mm256_store_pd(a + 8, x[2]);
+
+        x[3] = _mm256_load_pd(a + 12);
+        x[3] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][3], v_[0][3], v_[0][3], v_[0][3]), x[0], x[3]);
+        x[3] = _mm256_fnmadd_pd(_mm256_set_pd(v_[1][3], v_[1][3], v_[1][3], v_[1][3]), x[1], x[3]);
+        x[3] = _mm256_fnmadd_pd(_mm256_set_pd(v_[2][3], v_[2][3], v_[2][3], v_[2][3]), x[2], x[3]);
+        x[3] /= v_[3][3];
+        _mm256_store_pd(a + 12, x[3]);
     }
 }

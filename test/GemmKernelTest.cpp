@@ -96,10 +96,77 @@ namespace blazefeo :: testing
     }
 
 
+    TYPED_TEST_P(GemmKernelTest, testPotrf)
+    {
+        using Traits = GemmKernelTraits<TypeParam>;
+        TypeParam ker;
+
+        if constexpr (Traits::rows == Traits::columns)
+        {
+            StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> A, B, A1;
+            makePositiveDefinite(A);
+
+            ker.load(A.tile(0, 0), A.spacing());
+            ker.potrf();
+            ker.store(B.tile(0, 0), B.spacing());
+            
+            A1 = 0.;
+            gemm_nt(B, B, A1, A1);
+
+            BLAZEFEO_ASSERT_APPROX_EQ(A1, A, 1e-15, 1e-15);
+        }
+        else
+        {
+            std::clog << "GemmKernelTest.testPotrf not implemented for non-square kernels!" << std::endl;
+        }        
+    }
+
+
+    TYPED_TEST_P(GemmKernelTest, testTrsmRLT)
+    {
+        using Traits = GemmKernelTraits<TypeParam>;
+        TypeParam ker;
+
+        if constexpr (Traits::rows == Traits::columns)
+        {
+            using blaze::randomize;
+            StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> L, A, X, A1;            
+            
+            for (size_t i = 0; i < Traits::rows; ++i)
+                for (size_t j = 0; j < Traits::columns; ++j)
+                    if (j <= i)
+                        randomize(L(i, j));
+                    else
+                        reset(L(i, j));
+            
+            randomize(A);
+
+            ker.load(L.tile(0, 0), L.spacing());
+
+            X = A;
+            trsm<false, false, true>(ker, X.tile(0, 0));
+
+            A1 = 0.;
+            gemm_nt(X, L, A1, A1);
+
+            std::cout << A << std::endl;
+            std::cout << A1 << std::endl;
+
+            BLAZEFEO_ASSERT_APPROX_EQ(A1, A, 1e-14, 1e-14);
+        }
+        else
+        {
+            std::clog << "GemmKernelTest.testTrsmRLT not implemented for non-square kernels!" << std::endl;
+        }        
+    }
+
+
     REGISTER_TYPED_TEST_SUITE_P(GemmKernelTest,
         testLoadStore,
         testStore,
-        testGemmNT
+        testGemmNT,
+        testPotrf,
+        testTrsmRLT
     );
 
 
@@ -128,6 +195,31 @@ namespace blazefeo :: testing
         ker.load(A.tile(0, 0), A.spacing());
         ker.potrf();
         ker.store(A.tile(0, 0), A.spacing());
+
+        std::cout << A << std::endl;
+    }
+
+
+    TEST(GemmKernel_double_1_1_4_Test, testTrsmRLT)
+    {
+        GemmKernel<double, 1, 1, 4> ker;
+
+        StaticPanelMatrix<double, 4, 4, rowMajor> L {
+            {2,            0,            0,            0},
+            {3,            4,            0,            0},
+            {5,            6,            7,            0},
+            {8,            9,           10,           11},
+        };
+
+        StaticPanelMatrix<double, 4, 4, rowMajor> A {
+            {1,   0,   0,   0},
+            {0,   1,   0,   0},
+            {0,   0,   1,   0},
+            {0,   0,   0,   1},
+        };
+
+        ker.load(L.tile(0, 0), L.spacing());
+        trsm<false, false, true>(ker, A.tile(0, 0));
 
         std::cout << A << std::endl;
     }
