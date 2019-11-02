@@ -110,4 +110,25 @@ namespace blazefeo :: testing
     INSTANTIATE_TYPED_TEST_SUITE_P(GemmKernel_double_1_1_4, GemmKernelTest, GemmKernel_double_1_1_4);
     INSTANTIATE_TYPED_TEST_SUITE_P(GemmKernel_double_2_1_4, GemmKernelTest, GemmKernel_double_2_1_4);
     INSTANTIATE_TYPED_TEST_SUITE_P(GemmKernel_double_3_1_4, GemmKernelTest, GemmKernel_double_3_1_4);
+
+
+    TEST(GemmKernel_double_1_1_4_Test, testPotrf)
+    {
+        GemmKernel<double, 1, 1, 4> ker;
+
+        StaticPanelMatrix<double, 4, 4, rowMajor> A {
+            {4,     6,    10,    16},
+            {6,    25,    39,    60},
+            {10,    39,   110,   164},
+            {16,    60,   164,   366},
+        };
+
+        std::cout << A << std::endl;
+
+        ker.load(A.tile(0, 0), A.spacing());
+        ker.potrf();
+        ker.store(A.tile(0, 0), A.spacing());
+
+        std::cout << A << std::endl;
+    }
 }

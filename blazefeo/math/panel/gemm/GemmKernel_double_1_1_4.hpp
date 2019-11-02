@@ -7,6 +7,8 @@
 
 #include <immintrin.h>
 
+#include <cmath>
+
 
 namespace blazefeo
 {
@@ -104,6 +106,21 @@ namespace blazefeo
 
         template <bool TA, bool TB>
         void gemm(double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n);
+
+
+        void potrf()
+        {
+            v_[0] /= std::sqrt(v_[0][0]);
+            
+            v_[1] -= v_[0][1] * v_[0];
+            v_[1] /= std::sqrt(v_[1][1]);
+
+            v_[2] -= v_[0][2] * v_[0] + v_[1][2] * v_[1];
+            v_[2] /= std::sqrt(v_[2][2]);
+
+            v_[3] -= v_[0][3] * v_[0] + v_[1][3] * v_[1] + v_[2][3] * v_[2];
+            v_[3] /= std::sqrt(v_[3][3]);
+        }
 
 
     private:

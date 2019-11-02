@@ -9,6 +9,7 @@ add_executable(bench-blazefeo
     gemm_kernel/Gemm.cpp
     gemm_kernel/Store.cpp
     gemm_kernel/StoreVariableSize.cpp
+    gemm_kernel/Potrf.cpp
 
     GemmStatic.cpp
     GemmDynamic.cpp

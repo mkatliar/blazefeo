@@ -9,6 +9,7 @@
 #include <blaze/util/typetraits/AlignmentOf.h>
 
 #include <array>
+#include <initializer_list>
 
 
 namespace blazefeo
@@ -43,6 +44,30 @@ namespace blazefeo
             // Initialize padding elements to 0 to prevent denorms in calculations.
             // Denorms can significantly impair performance, see https://github.com/giaf/blasfeo/issues/103
             v_.fill(Type {});
+        }
+
+
+        constexpr StaticPanelMatrix(std::initializer_list<std::initializer_list<Type>> list)
+        {
+            v_.fill(Type {});
+            
+            if (list.size() != M || determineColumns(list) > N)
+                BLAZE_THROW_INVALID_ARGUMENT("Invalid setup of static panel matrix");
+
+            size_t i = 0;
+
+            for (auto const& row : list)
+            {
+                size_t j = 0;
+                
+                for (const auto& element : row)
+                {
+                    v_[elementIndex(i, j)] = element;
+                    ++j;
+                }
+
+                ++i;
+            }
         }
 
 

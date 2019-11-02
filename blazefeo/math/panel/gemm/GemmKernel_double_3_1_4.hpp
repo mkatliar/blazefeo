@@ -5,6 +5,8 @@
 #include <blazefeo/simd/Hsum.hpp>
 #include <blazefeo/Exception.hpp>
 
+#include <blaze/util/Exception.h>
+
 #include <immintrin.h>
 
 
@@ -139,6 +141,12 @@ namespace blazefeo
 
         template <bool TA, bool TB>
         void gemm(double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n);
+
+
+        void potrf()
+        {
+            BLAZE_THROW_LOGIC_ERROR("Not implemented");
+        }
 
 
     private:
