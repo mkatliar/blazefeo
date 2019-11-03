@@ -2,11 +2,14 @@
 
 #include <blazefeo/math/Forward.hpp>
 #include <blazefeo/math/panel/Gemm.hpp>
+#include <blazefeo/math/views/submatrix/BaseTemplate.hpp>
 #include <blazefeo/system/Tile.hpp>
 #include <blazefeo/system/CacheLine.hpp>
 
 #include <blaze/math/shims/NextMultiple.h>
+#include <blaze/math/dense/DenseIterator.h>
 #include <blaze/util/typetraits/AlignmentOf.h>
+#include <blaze/math/traits/SubmatrixTrait.h>
 
 #include <array>
 #include <initializer_list>
@@ -38,6 +41,9 @@ namespace blazefeo
         using Pointer        = Type*;        //!< Pointer to a non-constant matrix value.
         using ConstPointer   = const Type*;  //!< Pointer to a constant matrix value.
 
+        using Iterator      = DenseIterator<Type, true>;        //!< Iterator over non-constant elements.
+        using ConstIterator = DenseIterator<const Type, true>;  //!< Iterator over constant elements.
+   
         
         StaticPanelMatrix()
         {
@@ -86,13 +92,13 @@ namespace blazefeo
         StaticPanelMatrix& operator=(blaze::Matrix<MT, SO2> const& rhs);
 
 
-        Type operator()(size_t i, size_t j) const
+        constexpr ConstReference operator()(size_t i, size_t j) const
         {
             return v_[elementIndex(i, j)];
         }
 
 
-        Type& operator()(size_t i, size_t j)
+        constexpr Reference operator()(size_t i, size_t j)
         {
             return v_[elementIndex(i, j)];
         }
@@ -218,4 +224,35 @@ namespace blazefeo
 
         return *this;
     }
+}
+
+namespace blaze
+{
+    //=================================================================================================
+    //
+    //  SUBMATRIXTRAIT SPECIALIZATIONS
+    //
+    //=================================================================================================
+
+    template< typename T
+        , size_t M
+        , size_t N
+        , bool SO
+        , AlignmentFlag AF  // Alignment flag
+        , size_t... CSAs >              // Compile time submatrix arguments
+    struct SubmatrixType<blazefeo::StaticPanelMatrix<T, M, N, SO>, AF, CSAs...>
+    {
+        using Type = blazefeo::PanelSubmatrix< blazefeo::StaticPanelMatrix<T, M, N, SO>
+            , SO
+            , CSAs... >;
+    };
+
+
+    // @brief Define the type of result expression for panel submatrices.
+    template <typename T, size_t M, size_t N>
+    struct SubmatrixTrait<blazefeo::StaticPanelMatrix<T, M, N, rowMajor>>
+    {
+        // using Type = PanelSubmatrix<blazefeo::StaticPanelMatrix<T, M, N, rowMajor>, rowMajor>;
+        using Type = DynamicMatrix<T, rowMajor>;
+    };
 }

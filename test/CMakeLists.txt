@@ -9,6 +9,7 @@ find_package(blaze 3.5 REQUIRED)
 add_executable(test-blazefeo
     GemmKernelTest.cpp
     StaticPanelMatrixTest.cpp
+    SubmatrixTest.cpp
     DynamicPanelMatrixTest.cpp
     GemmTest.cpp
     PotrfTest.cpp
