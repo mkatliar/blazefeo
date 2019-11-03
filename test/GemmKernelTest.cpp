@@ -30,8 +30,8 @@ namespace blazefeo :: testing
         A.pack(data(A_ref), spacing(A_ref));
 
         TypeParam ker;
-        ker.load(A.tile(0, 0), A.spacing());
-        ker.store(B.tile(0, 0), B.spacing());
+        load(ker, A.tile(0, 0), A.spacing());
+        store(ker, B.tile(0, 0), B.spacing());
 
         for (size_t i = 0; i < Traits::rows; ++i)
             for (size_t j = 0; j < Traits::columns; ++j)
@@ -50,13 +50,13 @@ namespace blazefeo :: testing
         A.pack(data(A_ref), spacing(A_ref));
 
         TypeParam ker;
-        ker.load(A.tile(0, 0), A.spacing());
+        load(ker, A.tile(0, 0), A.spacing());
 
         for (size_t m = 0; m <= Traits::rows; ++m)
             for (size_t n = 0; n <= Traits::columns; ++n)
             {
                 B = 0.;
-                ker.store(B.tile(0, 0), B.spacing(), m, n);
+                store(ker, B.tile(0, 0), B.spacing(), m, n);
 
                 for (size_t i = 0; i < Traits::rows; ++i)
                     for (size_t j = 0; j < Traits::columns; ++j)
@@ -66,7 +66,7 @@ namespace blazefeo :: testing
     }
 
 
-    TYPED_TEST_P(GemmKernelTest, testGemmNT)
+    TYPED_TEST_P(GemmKernelTest, testGerNT)
     {
         using Traits = GemmKernelTraits<TypeParam>;
 
@@ -86,9 +86,10 @@ namespace blazefeo :: testing
         b.pack(data(mb), spacing(mb));
         c.pack(data(mc), spacing(mc));
 
-        TypeParam ker(c.tile(0, 0), c.spacing());
-        ker.template gemm<false, true>(a.tile(0, 0), a.spacing(), b.tile(0, 0), b.spacing());
-        ker.store(d.tile(0, 0), d.spacing());
+        TypeParam ker;
+        load(ker, c.tile(0, 0), c.spacing());
+        ger<false, true>(ker, 1.0, a.tile(0, 0), a.spacing(), b.tile(0, 0), b.spacing());
+        store(ker, d.tile(0, 0), d.spacing());
         
         d.unpack(data(md), spacing(md));
 
@@ -106,9 +107,9 @@ namespace blazefeo :: testing
             StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> A, B, A1;
             makePositiveDefinite(A);
 
-            ker.load(A.tile(0, 0), A.spacing());
+            load(ker, A.tile(0, 0), A.spacing());
             ker.potrf();
-            ker.store(B.tile(0, 0), B.spacing());
+            store(ker, B.tile(0, 0), B.spacing());
             
             A1 = 0.;
             gemm_nt(B, B, A1, A1);
@@ -141,7 +142,7 @@ namespace blazefeo :: testing
             
             randomize(A);
 
-            ker.load(L.tile(0, 0), L.spacing());
+            load(ker, L.tile(0, 0), L.spacing());
             trsm<false, false, true>(ker, A.tile(0, 0), X.tile(0, 0));
 
             A1 = 0.;
@@ -162,7 +163,7 @@ namespace blazefeo :: testing
     REGISTER_TYPED_TEST_SUITE_P(GemmKernelTest,
         testLoadStore,
         testStore,
-        testGemmNT,
+        testGerNT,
         testPotrf,
         testTrsmRLT
     );
@@ -190,9 +191,9 @@ namespace blazefeo :: testing
 
         std::cout << A << std::endl;
 
-        ker.load(A.tile(0, 0), A.spacing());
+        load(ker, A.tile(0, 0), A.spacing());
         ker.potrf();
-        ker.store(A.tile(0, 0), A.spacing());
+        store(ker, A.tile(0, 0), A.spacing());
 
         std::cout << A << std::endl;
     }
@@ -216,8 +217,8 @@ namespace blazefeo :: testing
             {0,   0,   0,   1},
         };
 
-        ker.load(L.tile(0, 0), L.spacing());
-        trsm<false, false, true>(ker, A.tile(0, 0), A.tile(0, 0));
+        load(ker, L.tile(0, 0), L.spacing());
+        trsm<false, false, true>(ker, tile(A, 0, 0), tile(A, 0, 0));
 
         std::cout << A << std::endl;
     }

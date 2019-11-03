@@ -24,11 +24,12 @@ namespace blazefeo :: benchmark
         StaticPanelMatrix<double, M, N, rowMajor> c, d;
         randomize(c);
 
-        Kernel ker(c.tile(0, 0), c.spacing());
+        Kernel ker;
+        load(ker, c.tile(0, 0), c.spacing());
 
         for (auto _ : state)
         {
-            ker.store(d.tile(0, 0), d.spacing(), m, n);
+            store(ker, d.tile(0, 0), d.spacing(), m, n);
             DoNotOptimize(d);   
         }
 

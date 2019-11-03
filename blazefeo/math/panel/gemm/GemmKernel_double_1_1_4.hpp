@@ -21,34 +21,28 @@ namespace blazefeo
         }
 
 
-        explicit GemmKernel(double const * ptr, size_t spacing)
+        void load(double beta, double const * ptr, size_t spacing)
         {
-            load(ptr, spacing);
+            v_[0] = beta * _mm256_load_pd(ptr);
+            v_[1] = beta * _mm256_load_pd(ptr + 4);
+            v_[2] = beta * _mm256_load_pd(ptr + 8);
+            v_[3] = beta * _mm256_load_pd(ptr + 12);
         }
 
 
-        void load(double const * ptr, size_t spacing)
-        {
-            v_[0] = _mm256_load_pd(ptr);
-            v_[1] = _mm256_load_pd(ptr + 4);
-            v_[2] = _mm256_load_pd(ptr + 8);
-            v_[3] = _mm256_load_pd(ptr + 12);
-        }
-
-
-        void load(double const * ptr, size_t spacing, size_t m, size_t n)
+        void load(double beta, double const * ptr, size_t spacing, size_t m, size_t n)
         {
             if (n > 0)
-                v_[0] = _mm256_load_pd(ptr);
+                v_[0] = beta * _mm256_load_pd(ptr);
 
             if (n > 1)
-                v_[1] = _mm256_load_pd(ptr + 4);
+                v_[1] = beta * _mm256_load_pd(ptr + 4);
 
             if (n > 2)
-                v_[2] = _mm256_load_pd(ptr + 8);
+                v_[2] = beta * _mm256_load_pd(ptr + 8);
 
             if (n > 3)
-                v_[3] = _mm256_load_pd(ptr + 12);
+                v_[3] = beta * _mm256_load_pd(ptr + 12);
         }
 
 
@@ -100,12 +94,14 @@ namespace blazefeo
         }
 
 
+        /// @brief Rank-1 update
         template <bool TA, bool TB>
-        void gemm(double const * a, size_t sa, double const * b, size_t sb);
+        void ger(double alpha, double const * a, size_t sa, double const * b, size_t sb);
 
 
+        /// @brief Rank-1 update of specified size
         template <bool TA, bool TB>
-        void gemm(double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n);
+        void ger(double alpha, double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n);
 
 
         void potrf()
@@ -136,10 +132,10 @@ namespace blazefeo
 
 
     template <>
-    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::gemm<false, true>(double const * a, size_t sa, double const * b, size_t sb)
+    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::ger<false, true>(double alpha, double const * a, size_t sa, double const * b, size_t sb)
     {
-        __m256d const a_v0 = _mm256_load_pd(a);
-        v_[0] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b), v_[0]);
+        __m256d const a_v0 = alpha * _mm256_load_pd(a);
+        v_[0] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 0), v_[0]);
         v_[1] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 1), v_[1]);
         v_[2] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 2), v_[2]);
         v_[3] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 3), v_[3]);
@@ -147,9 +143,9 @@ namespace blazefeo
 
 
     template <>
-    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::gemm<false, true>(double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::ger<false, true>(double alpha, double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
     {
-        __m256d const a_v0 = _mm256_load_pd(a);
+        __m256d const a_v0 = alpha * _mm256_load_pd(a);
 
         if (n > 0)
             v_[0] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b), v_[0]);

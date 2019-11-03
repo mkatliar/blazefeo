@@ -18,8 +18,61 @@ namespace blazefeo
     using namespace blaze;
 
 
+    template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void gemm_backend(GemmKernel<T, M, N, BS>& ker, size_t K, T alpha, T beta,
+        T const * a, size_t sa, T const * b, size_t sb, T const * c, size_t sc, T * d, size_t sd)
+    {
+        load(ker, beta, c, sc);
+
+        for (size_t k = 0; k < K; ++k)
+        {
+            ger<TA, TB>(ker, alpha, a, sa, b, sb);
+
+            a += TA ? M * sa : BS;
+            b += TB ? BS : N * sb;
+        }
+
+        store(ker, d, sd);
+    }
+
+
+    template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void gemm_backend(GemmKernel<T, M, N, BS>& ker, size_t K, T alpha, T beta,
+        T const * a, size_t sa, T const * b, size_t sb, T const * c, size_t sc, T * d, size_t sd,
+        size_t md, size_t nd)
+    {
+        load(ker, beta, c, sc, md, nd);
+        
+        for (size_t k = 0; k < K; ++k)
+        {
+            ger<TA, TB>(ker, alpha, a, sa, b, sb, md, nd);
+
+            a += TA ? M * sa : BS;
+            b += TB ? BS : N * sb;
+        }
+
+        store(ker, d, sd, md, nd);
+    }
+
+
     template <typename MT1, typename MT2, typename MT3, typename MT4>
     BLAZE_ALWAYS_INLINE void gemm_nt(
+        PanelMatrix<MT1, rowMajor> const& A, PanelMatrix<MT2, rowMajor> const& B, 
+        PanelMatrix<MT3, rowMajor> const& C, PanelMatrix<MT4, rowMajor>& D)
+    {
+        using ET = ElementType_t<MT1>;
+        
+        BLAZE_CONSTRAINT_MUST_BE_SAME_TYPE(ElementType_t<MT2>, ET);
+        BLAZE_CONSTRAINT_MUST_BE_SAME_TYPE(ElementType_t<MT3>, ET);
+        BLAZE_CONSTRAINT_MUST_BE_SAME_TYPE(ElementType_t<MT4>, ET);
+
+        gemm_nt(ET(1.), ET(1.), ~A, ~B, ~C, ~D);
+    }
+
+
+    template <typename ST1, typename ST2, typename MT1, typename MT2, typename MT3, typename MT4>
+    BLAZE_ALWAYS_INLINE void gemm_nt(
+        ST1 alpha, ST2 beta,
         PanelMatrix<MT1, rowMajor> const& A, PanelMatrix<MT2, rowMajor> const& B, 
         PanelMatrix<MT3, rowMajor> const& C, PanelMatrix<MT4, rowMajor>& D)
     {
@@ -54,12 +107,12 @@ namespace blazefeo
             size_t j = 0;
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), tile(B, j, 0), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D));
 
             for (; j * TILE_SIZE < N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), tile(B, j, 0), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D), 3 * TILE_SIZE, std::min(N - j * TILE_SIZE, TILE_SIZE));
         }
@@ -70,12 +123,12 @@ namespace blazefeo
             size_t j = 0;
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), tile(B, j, 0), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D));
 
             for (; j * TILE_SIZE < N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), tile(B, j, 0), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D), 2 * TILE_SIZE, std::min(N - j * TILE_SIZE, TILE_SIZE));
         }
@@ -88,12 +141,12 @@ namespace blazefeo
             ET const * b = tile(B, 0, 0);
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), b + j * spacing(B), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D));
 
             for (; j * TILE_SIZE < N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), b + j * spacing(B), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D), TILE_SIZE, std::min(N - j * TILE_SIZE, TILE_SIZE));
         }
@@ -107,12 +160,12 @@ namespace blazefeo
             ET const * b = tile(B, 0, 0);
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), b + j * spacing(B), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D), rm, TILE_SIZE);
 
             for (; j * TILE_SIZE < N; ++j)
-                gemm<false, true>(ker, K,
+                gemm_backend<false, true>(ker, K, alpha, beta,
                     a, spacing(A), b + j * spacing(B), spacing(B),
                     tile(C, i, j), spacing(C), tile(D, i, j), spacing(D), rm, std::min(N - j * TILE_SIZE, TILE_SIZE));
         }

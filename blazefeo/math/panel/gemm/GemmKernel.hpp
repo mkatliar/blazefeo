@@ -40,53 +40,60 @@ namespace blazefeo
     }
 
 
+    /// @brief Rank-1 update
     template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void gemm(GemmKernel<T, M, N, BS>& ker, T const * a, size_t sa, T const * b, size_t sb)
+    BLAZE_ALWAYS_INLINE void ger(GemmKernel<T, M, N, BS>& ker, T alpha, T const * a, size_t sa, T const * b, size_t sb)
     {
-        ker.template gemm<TA, TB>(a, sa, b, sb);
+        ker.template ger<TA, TB>(alpha, a, sa, b, sb);
     }
 
 
+    /// @brief Rank-1 update of specified size
     template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void gemm(GemmKernel<T, M, N, BS>& ker, T const * a, size_t sa, T const * b, size_t sb, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void ger(GemmKernel<T, M, N, BS>& ker, T alpha, T const * a, size_t sa, T const * b, size_t sb, size_t m, size_t n)
     {
-        ker.template gemm<TA, TB>(a, sa, b, sb, m, n);
+        ker.template ger<TA, TB>(alpha, a, sa, b, sb, m, n);
     }
 
 
-    template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void gemm(GemmKernel<T, M, N, BS>& ker, size_t K,
-        T const * a, size_t sa, T const * b, size_t sb, T const * c, size_t sc, T * d, size_t sd)
+    template <typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T const * a, size_t sa)
     {
-        ker.load(c, sc);
-
-        for (size_t k = 0; k < K; ++k)
-        {
-            gemm<TA, TB>(ker, a, sa, b, sb);
-
-            a += TA ? M * sa : BS;
-            b += TB ? BS : N * sb;
-        }
-
-        ker.store(d, sd);
+        ker.load(1.0, a, sa);
     }
 
 
-    template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void gemm(GemmKernel<T, M, N, BS>& ker, size_t K,
-        T const * a, size_t sa, T const * b, size_t sb, T const * c, size_t sc, T * d, size_t sd,
-        size_t md, size_t nd)
+    template <typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T const * a, size_t sa, size_t m, size_t n)
     {
-        ker.load(c, sc, md, nd);
-        
-        for (size_t k = 0; k < K; ++k)
-        {
-            gemm<TA, TB>(ker, a, sa, b, sb, md, nd);
+        ker.load(1.0, a, sa, m, n);
+    }
 
-            a += TA ? M * sa : BS;
-            b += TB ? BS : N * sb;
-        }
 
-        ker.store(d, sd, md, nd);
+    template <typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T beta, T const * a, size_t sa)
+    {
+        ker.load(beta, a, sa);
+    }
+
+
+    template <typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T beta, T const * a, size_t sa, size_t m, size_t n)
+    {
+        ker.load(beta, a, sa, m, n);
+    }
+
+
+    template <typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void store(GemmKernel<T, M, N, BS> const& ker, T * a, size_t sa)
+    {
+        ker.store(a, sa);
+    }
+
+
+    template <typename T, size_t M, size_t N, size_t BS>
+    BLAZE_ALWAYS_INLINE void store(GemmKernel<T, M, N, BS> const& ker, T * a, size_t sa, size_t m, size_t n)
+    {
+        ker.store(a, sa, m, n);
     }
 }

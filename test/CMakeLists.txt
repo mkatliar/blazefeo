@@ -11,6 +11,7 @@ add_executable(test-blazefeo
     StaticPanelMatrixTest.cpp
     DynamicPanelMatrixTest.cpp
     GemmTest.cpp
+    PotrfTest.cpp
 
     simd/HsumTest.cpp
 )
@@ -21,6 +22,7 @@ target_link_libraries(test-blazefeo PRIVATE
     GTest::GTest
     GTest::Main
     gmock
+    openblas
     ${CMAKE_THREAD_LIBS_INIT}    # Needed for gtest
 )
 

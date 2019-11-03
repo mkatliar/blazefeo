@@ -20,7 +20,8 @@ namespace blazefeo :: benchmark
         StaticPanelMatrix<double, M, N, rowMajor> a;
         randomize(a);
 
-        Kernel ker(a.tile(0, 0), a.spacing());
+        Kernel ker;
+        load(ker, a.tile(0, 0), a.spacing());
 
         for (auto _ : state)
         {
