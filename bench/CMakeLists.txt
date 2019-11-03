@@ -13,6 +13,7 @@ add_executable(bench-blazefeo
 
     GemmStatic.cpp
     GemmDynamic.cpp
+    PotrfStatic.cpp
 )
 
 

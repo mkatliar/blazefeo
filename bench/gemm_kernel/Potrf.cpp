@@ -10,14 +10,15 @@
 
 namespace blazefeo :: benchmark
 {
-    template <typename Kernel>
+    template <typename T, size_t M, size_t N, size_t P>
     static void BM_GemmKernel_potrf(State& state)
     {
+        using Kernel = GemmKernel<T, M, N, P>;
         using Traits = GemmKernelTraits<Kernel>;
-        size_t constexpr M = Traits::rows;
-        size_t constexpr N = Traits::columns;
+        size_t constexpr m = Traits::rows;
+        size_t constexpr n = Traits::columns;
         
-        StaticPanelMatrix<double, M, N, rowMajor> a;
+        StaticPanelMatrix<double, m, n, rowMajor> a;
         randomize(a);
 
         Kernel ker;
@@ -29,11 +30,12 @@ namespace blazefeo :: benchmark
             DoNotOptimize(ker);
         }
 
-        // state.counters["flops"] = Counter(M * N * K, Counter::kIsIterationInvariantRate);
+        if (m == n)
+            state.counters["flops"] = Counter(m * m * m / 3., Counter::kIsIterationInvariantRate);
     }
 
 
-    BENCHMARK_TEMPLATE(BM_GemmKernel_potrf, GemmKernel<double, 1, 1, 4>);
-    // BENCHMARK_TEMPLATE(BM_GemmKernel_gemm_nt, GemmKernel<double, 2, 1, 4>);
-    // BENCHMARK_TEMPLATE(BM_GemmKernel_gemm_nt, GemmKernel<double, 3, 1, 4>);
+    BENCHMARK_TEMPLATE(BM_GemmKernel_potrf, double, 1, 1, 4);
+    // BENCHMARK_TEMPLATE(BM_GemmKernel_gemm_nt, double, 2, 1, 4);
+    // BENCHMARK_TEMPLATE(BM_GemmKernel_gemm_nt, double, 3, 1, 4);
 }
