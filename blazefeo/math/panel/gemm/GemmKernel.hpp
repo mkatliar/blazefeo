@@ -34,9 +34,9 @@ namespace blazefeo
 
 
     template <bool LeftSide, bool Upper, bool TransA, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void trsm(GemmKernel<T, M, N, BS>& ker, T * a)
+    BLAZE_ALWAYS_INLINE void trsm(GemmKernel<T, M, N, BS>& ker, T const * a, T * x)
     {
-        ker.template trsm<LeftSide, Upper, TransA>(a);
+        ker.template trsm<LeftSide, Upper, TransA>(a, x);
     }
 
 

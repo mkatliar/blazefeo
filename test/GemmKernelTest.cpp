@@ -142,9 +142,7 @@ namespace blazefeo :: testing
             randomize(A);
 
             ker.load(L.tile(0, 0), L.spacing());
-
-            X = A;
-            trsm<false, false, true>(ker, X.tile(0, 0));
+            trsm<false, false, true>(ker, A.tile(0, 0), X.tile(0, 0));
 
             A1 = 0.;
             gemm_nt(X, L, A1, A1);
@@ -219,7 +217,7 @@ namespace blazefeo :: testing
         };
 
         ker.load(L.tile(0, 0), L.spacing());
-        trsm<false, false, true>(ker, A.tile(0, 0));
+        trsm<false, false, true>(ker, A.tile(0, 0), A.tile(0, 0));
 
         std::cout << A << std::endl;
     }
