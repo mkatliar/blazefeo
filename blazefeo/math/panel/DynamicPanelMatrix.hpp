@@ -22,7 +22,22 @@ namespace blazefeo
     :   public PanelMatrix<DynamicPanelMatrix<Type, SO>, SO>
     {
     public:
-        using ElementType = Type;
+        //**Type definitions****************************************************************************
+        using This          = DynamicPanelMatrix<Type, SO>;   //!< Type of this StaticPanelMatrix instance.
+        using BaseType      = PanelMatrix<This, SO>;        //!< Base type of this StaticPanelMatrix instance.
+        using ResultType    = This;                        //!< Result type for expression template evaluations.
+        using OppositeType  = DynamicPanelMatrix<Type, !SO>;  //!< Result type with opposite storage order for expression template evaluations.
+        using TransposeType = DynamicPanelMatrix<Type, !SO>;  //!< Transpose type for expression template evaluations.
+        using ElementType   = Type;                        //!< Type of the matrix elements.
+        // using SIMDType      = SIMDTrait_t<ElementType>;    //!< SIMD type of the matrix elements.
+        using ReturnType    = const Type&;                 //!< Return type for expression template evaluations.
+        using CompositeType = const This&;                 //!< Data type for composite expression templates.
+
+        using Reference      = Type&;        //!< Reference to a non-constant matrix value.
+        using ConstReference = const Type&;  //!< Reference to a constant matrix value.
+        using Pointer        = Type*;        //!< Pointer to a non-constant matrix value.
+        using ConstPointer   = const Type*;  //!< Pointer to a constant matrix value.
+
 
         
         explicit DynamicPanelMatrix(size_t m, size_t n)

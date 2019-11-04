@@ -1,10 +1,7 @@
 #pragma once
 
 #include <blazefeo/math/PanelMatrix.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_1_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_2_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_3_1_4.hpp>
+#include <blazefeo/math/panel/Gemm.hpp>
 #include <blazefeo/system/Tile.hpp>
 
 #include <blaze/util/Exception.h>
