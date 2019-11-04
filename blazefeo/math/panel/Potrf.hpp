@@ -40,19 +40,22 @@ namespace blazefeo
 
         for (size_t k = 0; (k + 1) * TILE_SIZE <= M; ++k)
         {
-            size_t i = 0;
-
             // Zero-out upper blocks
-            for (; i < k; ++i)
-                std::fill_n(tile(L, i, k), TILE_SIZE * TILE_SIZE, ET {});
+            std::fill_n(tile(L, k, k + 1), TILE_SIZE * (M - TILE_SIZE * (k + 1)), ET {});
 
-            size_t const K = k * TILE_SIZE;
-            auto L1 = submatrix(~L, K, K, M - K, TILE_SIZE);
-            gemm_nt(ET(-1.), ET(1.),
-                submatrix(~L, K, 0, M - K, K),
-                submatrix(~L, K, 0, TILE_SIZE, K),
-                submatrix(~A, K, K, M - K, TILE_SIZE),
-                L1);
+            // for (size_t i = 0; i < k; ++i)
+            //     std::fill_n(tile(L, i, k), TILE_SIZE * TILE_SIZE, ET {});
+
+            if (k > 0)
+            {
+                size_t const K = k * TILE_SIZE;
+                auto L1 = submatrix(~L, K, K, M - K, TILE_SIZE);
+                gemm_nt(ET(-1.), ET(1.),
+                    submatrix(~L, K, 0, M - K, K),
+                    submatrix(~L, K, 0, TILE_SIZE, K),
+                    submatrix(~A, K, K, M - K, TILE_SIZE),
+                    L1);
+            }
 
             // for (; (i + 1) * TILE_SIZE <= M; ++i)
             // {   

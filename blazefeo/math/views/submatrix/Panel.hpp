@@ -77,6 +77,7 @@ namespace blazefeo
         explicit inline PanelSubmatrix( MT& matrix, RSAs... args )
         : DataType  ( args... )
         , matrix_   ( matrix  )  // The matrix containing the submatrix
+        , data_(matrix_.tile(row() / tileSize_, 0) + column() * tileSize_)
         {
             if( !Contains_v< TypeList<RSAs...>, Unchecked > ) {
                 if( ( row() + rows() > matrix_.rows() ) || ( column() + columns() > matrix_.columns() ) ) {
@@ -185,39 +186,36 @@ namespace blazefeo
 
         Pointer data() noexcept
         {
-            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
-
-            return matrix_.data() + (row() / tileSize_) * spacing() + column() * tileSize_;
+            return data_;
         }
         
 
         ConstPointer data() const noexcept
         {
-            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
-
-            return matrix_.data() + (row() / tileSize_) * spacing() + column() * tileSize_;
+            return data_;
         }
 
 
         Pointer tile(size_t i, size_t j) noexcept
         {
-            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
-
-            return matrix_.tile(row() / tileSize_ + i, 0) + column() * tileSize_ + tileSize_ * tileSize_ * j;
+            return data_ + spacing() * i + tileSize_ * tileSize_ * j;
         }
         
 
         ConstPointer tile(size_t i, size_t j) const noexcept
         {
-            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
-
-            return matrix_.tile(row() / tileSize_ + i, 0) + column() * tileSize_ + tileSize_ * tileSize_ * j;
+            return data_ + spacing() * i + tileSize_ * tileSize_ * j;
         }
         
 
     private:
         static size_t constexpr tileSize_ = TileSize_v<ElementType>;
+
         Operand matrix_;        //!< The matrix containing the submatrix.
+        
+        // Pointer to the first element of the submatrix
+        Pointer const data_ = nullptr;
+        
     
         //**Friend declarations*************************************************************************
         template< typename MT2, bool SO2, size_t... CSAs2 > friend class PanelSubmatrix;
