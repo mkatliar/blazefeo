@@ -5,6 +5,7 @@
 #include <blaze/math/constraints/Submatrix.h>
 #include <blaze/math/constraints/Symmetric.h>
 #include <blaze/math/views/submatrix/SubmatrixData.h>
+#include <blaze/math/traits/SubmatrixTrait.h>
 #include <blaze/util/constraints/Pointer.h>
 #include <blaze/util/constraints/Reference.h>
 
@@ -52,7 +53,7 @@ namespace blazefeo
         using OppositeType  = OppositeType_t<ResultType>;    //!< Result type with opposite storage order for expression template evaluations.
         using TransposeType = TransposeType_t<ResultType>;   //!< Transpose type for expression template evaluations.
         using ElementType   = ElementType_t<MT>;             //!< Type of the submatrix elements.
-        using SIMDType      = SIMDTrait_t<ElementType>;      //!< SIMD type of the submatrix elements.
+        // using SIMDType      = SIMDTrait_t<ElementType>;      //!< SIMD type of the submatrix elements.
         using ReturnType    = ReturnType_t<MT>;              //!< Return type for expression template evaluations
         using CompositeType = const PanelSubmatrix&;              //!< Data type for composite expression templates.
 
@@ -86,6 +87,14 @@ namespace blazefeo
                 BLAZE_USER_ASSERT( row()    + rows()    <= matrix_.rows()   , "Invalid submatrix specification" );
                 BLAZE_USER_ASSERT( column() + columns() <= matrix_.columns(), "Invalid submatrix specification" );
             }
+
+            if (IsRowMajorMatrix_v<MT> && row() % tileSize_ > 0)
+                BLAZE_THROW_LOGIC_ERROR("Submatrices of a row-major panel matrix which are not vertically aligned on a tile boundary "
+                    "are currently not supported");
+
+            if (IsColumnMajorMatrix_v<MT> && column() % tileSize_ > 0)
+                BLAZE_THROW_LOGIC_ERROR("Submatrices of a column-major panel matrix which are not horizontally aligned on a tile boundary "
+                    "are currently not supported");
         }
 
         
@@ -176,17 +185,38 @@ namespace blazefeo
 
         Pointer data() noexcept
         {
-            return matrix_.data() + row()*spacing() + column();
+            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
+
+            return matrix_.data() + (row() / tileSize_) * spacing() + column() * tileSize_;
         }
         
 
         ConstPointer data() const noexcept
         {
-            return matrix_.data() + row()*spacing() + column();
+            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
+
+            return matrix_.data() + (row() / tileSize_) * spacing() + column() * tileSize_;
+        }
+
+
+        Pointer tile(size_t i, size_t j) noexcept
+        {
+            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
+
+            return matrix_.tile(row() / tileSize_ + i, 0) + column() * tileSize_ + tileSize_ * tileSize_ * j;
+        }
+        
+
+        ConstPointer tile(size_t i, size_t j) const noexcept
+        {
+            BLAZE_USER_ASSERT(IsRowMajorMatrix_v<MT> && row() % tileSize_ == 0, "Not supported");
+
+            return matrix_.tile(row() / tileSize_ + i, 0) + column() * tileSize_ + tileSize_ * tileSize_ * j;
         }
         
 
     private:
+        static size_t constexpr tileSize_ = TileSize_v<ElementType>;
         Operand matrix_;        //!< The matrix containing the submatrix.
     
         //**Friend declarations*************************************************************************

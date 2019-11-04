@@ -1,6 +1,7 @@
 #pragma once
 
 #include <blazefeo/math/PanelMatrix.hpp>
+#include <blazefeo/math/views/submatrix/Panel.hpp>
 #include <blazefeo/math/panel/Gemm.hpp>
 #include <blazefeo/system/Tile.hpp>
 
@@ -45,14 +46,20 @@ namespace blazefeo
             for (; i < k; ++i)
                 std::fill_n(tile(L, i, k), TILE_SIZE * TILE_SIZE, ET {});
 
-            for (; (i + 1) * TILE_SIZE <= M; ++i)
-            {
-                size_t const K = k * TILE_SIZE;
-                
-                gemm_backend<false, true>(ker, K, -1., 1.,
-                    tile(L, i, 0), spacing(L), tile(L, k, 0), spacing(L),
-                    tile(A, i, k), spacing(A), tile(L, i, k), spacing(L));
-            }
+            size_t const K = k * TILE_SIZE;
+            auto L1 = submatrix(~L, K, K, M - K, TILE_SIZE);
+            gemm_nt(ET(-1.), ET(1.),
+                submatrix(~L, K, 0, M - K, K),
+                submatrix(~L, K, 0, TILE_SIZE, K),
+                submatrix(~A, K, K, M - K, TILE_SIZE),
+                L1);
+
+            // for (; (i + 1) * TILE_SIZE <= M; ++i)
+            // {   
+            //     gemm_backend<false, true>(ker, K, -1., 1.,
+            //         tile(L, i, 0), spacing(L), tile(L, k, 0), spacing(L),
+            //         tile(A, i, k), spacing(A), tile(L, i, k), spacing(L));
+            // }
 
             load(ker, tile(L, k, k), spacing(L));
             ker.potrf();

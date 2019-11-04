@@ -9,7 +9,7 @@ namespace blazefeo :: testing
 {
     TEST(PotrfTest, testDynamicSize)
     {
-        for (size_t M : {4, 8})
+        for (size_t M : {4, 8, 12, 16})
         {
             // Init matrices
             //
@@ -17,7 +17,7 @@ namespace blazefeo :: testing
             makePositiveDefinite(blaze_A);
             llh(blaze_A, blaze_L);
 
-            DynamicPanelMatrix<double> A(M, M), L(M, M), A1(M, M);
+            DynamicPanelMatrix<double, rowMajor> A(M, M), L(M, M), A1(M, M);
             A.pack(data(blaze_A), spacing(blaze_A));
             
             // Do potrf

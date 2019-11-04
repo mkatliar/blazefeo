@@ -9,6 +9,7 @@
 #include <blaze/math/shims/NextMultiple.h>
 #include <blaze/math/dense/DenseIterator.h>
 #include <blaze/util/typetraits/AlignmentOf.h>
+#include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/traits/SubmatrixTrait.h>
 
 #include <array>
@@ -248,6 +249,20 @@ namespace blaze
     };
 
 
+    template< typename T
+        , size_t M
+        , size_t N
+        , bool SO
+        , AlignmentFlag AF  // Alignment flag
+        , size_t... CSAs >              // Compile time submatrix arguments
+    struct SubmatrixType<blazefeo::StaticPanelMatrix<T, M, N, SO> const, AF, CSAs...>
+    {
+        using Type = blazefeo::PanelSubmatrix< blazefeo::StaticPanelMatrix<T, M, N, SO> const
+            , SO
+            , CSAs... >;
+    };
+
+
     // @brief Define the type of result expression for panel submatrices.
     template <typename T, size_t M, size_t N>
     struct SubmatrixTrait<blazefeo::StaticPanelMatrix<T, M, N, rowMajor>>
@@ -255,4 +270,20 @@ namespace blaze
         // using Type = PanelSubmatrix<blazefeo::StaticPanelMatrix<T, M, N, rowMajor>, rowMajor>;
         using Type = DynamicMatrix<T, rowMajor>;
     };
+
+
+    //=================================================================================================
+    //
+    //  HASMUTABLEDATAACCESS SPECIALIZATIONS
+    //
+    //=================================================================================================
+
+    //*************************************************************************************************
+    /*! \cond BLAZE_INTERNAL */
+    template <typename T, size_t M, size_t N, bool SO>
+    struct HasMutableDataAccess<blazefeo::StaticPanelMatrix<T, M, N, SO>>
+    :   public TrueType
+    {};
+    /*! \endcond */
+    //*************************************************************************************************
 }

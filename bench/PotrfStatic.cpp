@@ -17,7 +17,7 @@ namespace blazefeo :: benchmark
     template <typename Real, size_t M>
     static void BM_potrf_static(::benchmark::State& state)
     {
-        StaticPanelMatrix<Real, M, M> A, L;
+        StaticPanelMatrix<Real, M, M, rowMajor> A, L;
         makePositiveDefinite(A);
 
         for (auto _ : state)

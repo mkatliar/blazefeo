@@ -1,12 +1,15 @@
 #pragma once
 
 #include <blazefeo/math/PanelMatrix.hpp>
+#include <blazefeo/math/views/submatrix/BaseTemplate.hpp>
 #include <blazefeo/system/Tile.hpp>
 #include <blazefeo/system/CacheLine.hpp>
 
 #include <blaze/util/Memory.h>
 #include <blaze/util/Types.h>
 #include <blaze/math/shims/NextMultiple.h>
+#include <blaze/math/traits/SubmatrixTrait.h>
+#include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/system/Restrict.h>
 
 #include <new>
@@ -94,13 +97,13 @@ namespace blazefeo
         }
 
 
-        Type operator()(size_t i, size_t j) const noexcept
+        ConstReference operator()(size_t i, size_t j) const noexcept
         {
             return v_[elementIndex(i, j)];
         }
 
 
-        Type& operator()(size_t i, size_t j) noexcept
+        Reference operator()(size_t i, size_t j) noexcept
         {
             return v_[elementIndex(i, j)];
         }
@@ -175,4 +178,58 @@ namespace blazefeo
             return panel_i * spacing_ + panel_j * elementsPerTile_ + subpanel_i + subpanel_j * tileSize_;
         }
     };
+}
+
+
+namespace blaze
+{
+    //=================================================================================================
+    //
+    //  SUBMATRIXTRAIT SPECIALIZATIONS
+    //
+    //=================================================================================================
+
+    template< typename T
+        , bool SO
+        , AlignmentFlag AF  // Alignment flag
+        , size_t... CSAs >              // Compile time submatrix arguments
+    struct SubmatrixType<blazefeo::DynamicPanelMatrix<T, SO>, AF, CSAs...>
+    {
+        using Type = blazefeo::PanelSubmatrix<blazefeo::DynamicPanelMatrix<T, SO>, SO, CSAs...>;
+    };
+
+
+    template< typename T
+        , bool SO
+        , AlignmentFlag AF  // Alignment flag
+        , size_t... CSAs >              // Compile time submatrix arguments
+    struct SubmatrixType<blazefeo::DynamicPanelMatrix<T, SO> const, AF, CSAs...>
+    {
+        using Type = blazefeo::PanelSubmatrix<blazefeo::DynamicPanelMatrix<T, SO> const, SO, CSAs...>;
+    };
+
+
+    // @brief Define the type of result expression for panel submatrices.
+    template <typename T>
+    struct SubmatrixTrait<blazefeo::DynamicPanelMatrix<T, rowMajor>>
+    {
+        // using Type = PanelSubmatrix<blazefeo::StaticPanelMatrix<T, M, N, rowMajor>, rowMajor>;
+        using Type = DynamicMatrix<T, rowMajor>;
+    };
+
+
+    //=================================================================================================
+    //
+    //  HASMUTABLEDATAACCESS SPECIALIZATIONS
+    //
+    //=================================================================================================
+
+    //*************************************************************************************************
+    /*! \cond BLAZE_INTERNAL */
+    template <typename T, bool SO>
+    struct HasMutableDataAccess<blazefeo::DynamicPanelMatrix<T, SO>>
+    :   public TrueType
+    {};
+    /*! \endcond */
+    //*************************************************************************************************
 }
