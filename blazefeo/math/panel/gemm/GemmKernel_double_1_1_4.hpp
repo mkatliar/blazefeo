@@ -21,7 +21,7 @@ namespace blazefeo
         }
 
 
-        void load(double beta, double const * ptr, size_t spacing)
+        BLAZE_ALWAYS_INLINE void load(double beta, double const * ptr, size_t spacing)
         {
             v_[0] = beta * _mm256_load_pd(ptr);
             v_[1] = beta * _mm256_load_pd(ptr + 4);
@@ -30,7 +30,7 @@ namespace blazefeo
         }
 
 
-        void load(double beta, double const * ptr, size_t spacing, size_t m, size_t n)
+        BLAZE_ALWAYS_INLINE void load(double beta, double const * ptr, size_t spacing, size_t m, size_t n)
         {
             if (n > 0)
                 v_[0] = beta * _mm256_load_pd(ptr);
@@ -46,7 +46,7 @@ namespace blazefeo
         }
 
 
-        void store(double * ptr, size_t spacing) const
+        BLAZE_ALWAYS_INLINE void store(double * ptr, size_t spacing) const
         {
             _mm256_store_pd(ptr, v_[0]);
             _mm256_store_pd(ptr + 4, v_[1]);
@@ -55,7 +55,7 @@ namespace blazefeo
         }
 
 
-        void store(double * ptr, size_t spacing, size_t m, size_t n) const
+        BLAZE_ALWAYS_INLINE void store(double * ptr, size_t spacing, size_t m, size_t n) const
         {
             if (m >= 4)
             {
@@ -104,7 +104,7 @@ namespace blazefeo
         void ger(double alpha, double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n);
 
 
-        void potrf()
+        BLAZE_ALWAYS_INLINE void potrf()
         {
             v_[0] *= 1. / std::sqrt(v_[0][0]);
             
