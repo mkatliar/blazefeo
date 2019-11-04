@@ -15,6 +15,7 @@ add_executable(test-blazefeo
     PotrfTest.cpp
 
     simd/HsumTest.cpp
+    simd/SqrtTest.cpp
 )
 
 target_link_libraries(test-blazefeo PRIVATE
