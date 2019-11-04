@@ -29,15 +29,13 @@ namespace blazefeo
     // row-major panel submatrices.
     */
     template< typename MT       // Type of the panel matrix
-            , bool SO
-            , size_t... CSAs >  // Compile time submatrix arguments
-    class PanelSubmatrix
-    : public View<PanelMatrix<PanelSubmatrix<MT, SO, CSAs...>, SO>>
-    , private SubmatrixData<CSAs...>
+            , bool SO >  // Compile time submatrix arguments
+    class PanelSubmatrix<MT, SO>
+    : public View<PanelMatrix<PanelSubmatrix<MT, SO>, SO>>
     {
     private:
         //**Type definitions****************************************************************************
-        using DataType = SubmatrixData<CSAs...>;               //!< The type of the SubmatrixData base class.
+        using DataType = SubmatrixData<>;               //!< The type of the SubmatrixData base class.
         using Operand  = If_t< IsExpression_v<MT>, MT, MT& >;  //!< Composite data type of the matrix expression.
         //**********************************************************************************************
 
@@ -45,11 +43,11 @@ namespace blazefeo
     public:
         //**Type definitions****************************************************************************
         //! Type of this PanelSubmatrix instance.
-        using This = PanelSubmatrix<MT, SO, CSAs...>;
+        using This = PanelSubmatrix<MT, SO>;
 
         using BaseType      = PanelMatrix<This, SO>;       //!< Base type of this PanelSubmatrix instance.
         using ViewedType    = MT;                            //!< The type viewed by this PanelSubmatrix instance.
-        using ResultType    = SubmatrixTrait_t<MT, CSAs...>;  //!< Result type for expression template evaluations.
+        using ResultType    = SubmatrixTrait_t<MT>;  //!< Result type for expression template evaluations.
         using OppositeType  = OppositeType_t<ResultType>;    //!< Result type with opposite storage order for expression template evaluations.
         using TransposeType = TransposeType_t<ResultType>;   //!< Transpose type for expression template evaluations.
         using ElementType   = ElementType_t<MT>;             //!< Type of the submatrix elements.
@@ -71,31 +69,35 @@ namespace blazefeo
         //**********************************************************************************************
 
 
-        //**Constructors********************************************************************************
-        
-        template< typename... RSAs >
-        explicit inline PanelSubmatrix( MT& matrix, RSAs... args )
-        : DataType  ( args... )
-        , matrix_   ( matrix  )  // The matrix containing the submatrix
-        , data_(matrix_.tile(row() / tileSize_, 0) + column() * tileSize_)
+        //**Constructors********************************************************************************        
+        template <typename... RSAs>
+        explicit inline constexpr PanelSubmatrix(MT& matrix, size_t i, size_t j, size_t m, size_t n, RSAs... args)
+        :   matrix_   ( matrix  )  // The matrix containing the submatrix
+        ,   i_(i)
+        ,   j_(j)
+        ,   m_(m)
+        ,   n_(n)
+        ,   data_(matrix_.tile(row() / tileSize_, 0) + column() * tileSize_)
         {
-            if( !Contains_v< TypeList<RSAs...>, Unchecked > ) {
+            if( !Contains_v< TypeList<RSAs...>, Unchecked > )
+            {
                 if( ( row() + rows() > matrix_.rows() ) || ( column() + columns() > matrix_.columns() ) ) {
                     BLAZE_THROW_INVALID_ARGUMENT( "Invalid submatrix specification" );
                 }
+
+                if (IsRowMajorMatrix_v<MT> && row() % tileSize_ > 0)
+                    BLAZE_THROW_LOGIC_ERROR("Submatrices of a row-major panel matrix which are not vertically aligned on a tile boundary "
+                        "are currently not supported");
+
+                if (IsColumnMajorMatrix_v<MT> && column() % tileSize_ > 0)
+                    BLAZE_THROW_LOGIC_ERROR("Submatrices of a column-major panel matrix which are not horizontally aligned on a tile boundary "
+                        "are currently not supported");
             }
-            else {
+            else
+            {
                 BLAZE_USER_ASSERT( row()    + rows()    <= matrix_.rows()   , "Invalid submatrix specification" );
                 BLAZE_USER_ASSERT( column() + columns() <= matrix_.columns(), "Invalid submatrix specification" );
             }
-
-            if (IsRowMajorMatrix_v<MT> && row() % tileSize_ > 0)
-                BLAZE_THROW_LOGIC_ERROR("Submatrices of a row-major panel matrix which are not vertically aligned on a tile boundary "
-                    "are currently not supported");
-
-            if (IsColumnMajorMatrix_v<MT> && column() % tileSize_ > 0)
-                BLAZE_THROW_LOGIC_ERROR("Submatrices of a column-major panel matrix which are not horizontally aligned on a tile boundary "
-                    "are currently not supported");
         }
 
         
@@ -107,10 +109,28 @@ namespace blazefeo
         //  UTILITY FUNCTIONS
         //
         //=================================================================================================
-        using DataType::row;
-        using DataType::column;
-        using DataType::rows;
-        using DataType::columns;
+        size_t constexpr row() const noexcept
+        {
+            return i_;
+        };
+
+
+        size_t constexpr column() const noexcept
+        {
+            return j_;
+        };
+        
+        
+        size_t constexpr rows() const noexcept
+        {
+            return m_;
+        };
+
+
+        size_t constexpr columns() const noexcept
+        {
+            return n_;
+        };
 
         MT& operand() noexcept
         {
@@ -213,8 +233,13 @@ namespace blazefeo
 
         Operand matrix_;        //!< The matrix containing the submatrix.
         
+        size_t const i_;
+        size_t const j_;
+        size_t const m_;
+        size_t const n_;
+
         // Pointer to the first element of the submatrix
-        Pointer const data_ = nullptr;
+        Pointer const data_;
         
     
         //**Friend declarations*************************************************************************

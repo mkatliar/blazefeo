@@ -49,11 +49,11 @@ namespace blazefeo
             if (k > 0)
             {
                 size_t const K = k * TILE_SIZE;
-                auto L1 = submatrix(~L, K, K, M - K, TILE_SIZE);
+                auto L1 = submatrix(~L, K, K, M - K, TILE_SIZE, unchecked);
                 gemm_nt(ET(-1.), ET(1.),
-                    submatrix(~L, K, 0, M - K, K),
-                    submatrix(~L, K, 0, TILE_SIZE, K),
-                    submatrix(~A, K, K, M - K, TILE_SIZE),
+                    submatrix(~L, K, 0, M - K, K, unchecked),
+                    submatrix(~L, K, 0, TILE_SIZE, K, unchecked),
+                    submatrix(~A, K, K, M - K, TILE_SIZE, unchecked),
                     L1);
             }
 
