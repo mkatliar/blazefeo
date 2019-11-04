@@ -1,7 +1,7 @@
 #include <blazefeo/math/StaticPanelMatrix.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_1_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_2_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_3_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
 
 #include <bench/Benchmark.hpp>
 
@@ -11,10 +11,10 @@
 namespace blazefeo :: benchmark
 {
     template <typename T, size_t M, size_t N, size_t P>
-    static void BM_GemmKernel_ger_nt(State& state)
+    static void BM_RegisterMatrix_ger_nt(State& state)
     {
-        using Kernel = GemmKernel<T, M, N, P>;
-        using Traits = GemmKernelTraits<Kernel>;
+        using Kernel = RegisterMatrix<T, M, N, P>;
+        using Traits = RegisterMatrixTraits<Kernel>;
         size_t constexpr K = 10000;
         
         DynamicMatrix<double, columnMajor> a(Traits::rows, K);
@@ -40,7 +40,7 @@ namespace blazefeo :: benchmark
     }
 
 
-    BENCHMARK_TEMPLATE(BM_GemmKernel_ger_nt, double, 1, 1, 4);
-    // BENCHMARK_TEMPLATE(BM_GemmKernel_ger_nt, double, 2, 1, 4);
-    // BENCHMARK_TEMPLATE(BM_GemmKernel_ger_nt, double, 3, 1, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 1, 1, 4);
+    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 2, 1, 4);
+    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 3, 1, 4);
 }

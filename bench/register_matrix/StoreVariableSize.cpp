@@ -1,7 +1,7 @@
 #include <blazefeo/math/StaticPanelMatrix.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_1_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_2_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_3_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
 
 #include <bench/Benchmark.hpp>
 
@@ -13,9 +13,9 @@
 namespace blazefeo :: benchmark
 {
     template <typename Kernel>
-    static void BM_GemmKernel_storeVariableSize(State& state)
+    static void BM_RegisterMatrix_storeVariableSize(State& state)
     {
-        using Traits = GemmKernelTraits<Kernel>;
+        using Traits = RegisterMatrixTraits<Kernel>;
         size_t constexpr M = Traits::rows;
         size_t constexpr N = Traits::columns;
         size_t const m = state.range(0);
@@ -65,7 +65,7 @@ namespace blazefeo :: benchmark
 
     using std::placeholders::_1;
 
-    BENCHMARK_TEMPLATE(BM_GemmKernel_storeVariableSize, GemmKernel<double, 1, 1, 4>)->Apply(args_4_4);
-    BENCHMARK_TEMPLATE(BM_GemmKernel_storeVariableSize, GemmKernel<double, 2, 1, 4>)->Apply(args_8_4);
-    BENCHMARK_TEMPLATE(BM_GemmKernel_storeVariableSize, GemmKernel<double, 3, 1, 4>)->Apply(args_12_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 1, 1, 4>)->Apply(args_4_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 2, 1, 4>)->Apply(args_8_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 3, 1, 4>)->Apply(args_12_4);
 }

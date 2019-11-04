@@ -1,10 +1,10 @@
 #pragma once
 
 #include <blazefeo/math/PanelMatrix.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_1_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_2_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_3_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/RegisterMatrix.hpp>
+#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
 #include <blazefeo/system/Tile.hpp>
 
 #include <blaze/util/Exception.h>
@@ -19,7 +19,7 @@ namespace blazefeo
 
 
     template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void gemm_backend(GemmKernel<T, M, N, BS>& ker, size_t K, T alpha, T beta,
+    BLAZE_ALWAYS_INLINE void gemm_backend(RegisterMatrix<T, M, N, BS>& ker, size_t K, T alpha, T beta,
         T const * a, size_t sa, T const * b, size_t sb, T const * c, size_t sc, T * d, size_t sd)
     {
         load(ker, beta, c, sc);
@@ -37,7 +37,7 @@ namespace blazefeo
 
 
     template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void gemm_backend(GemmKernel<T, M, N, BS>& ker, size_t K, T alpha, T beta,
+    BLAZE_ALWAYS_INLINE void gemm_backend(RegisterMatrix<T, M, N, BS>& ker, size_t K, T alpha, T beta,
         T const * a, size_t sa, T const * b, size_t sb, T const * c, size_t sc, T * d, size_t sd,
         size_t md, size_t nd)
     {
@@ -103,7 +103,7 @@ namespace blazefeo
         // it is more efficient to apply 2 * TILE_SIZE kernel 2 times than 3 * TILE_SIZE + 1 * TILE_SIZE kernel.
         for (; (i + 3) * TILE_SIZE <= M && (i + 4) * TILE_SIZE != M; i += 3, a += 3 * spacing(A))
         {
-            GemmKernel<ET, 3, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 3, 1, TILE_SIZE> ker;
             size_t j = 0;
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
@@ -119,7 +119,7 @@ namespace blazefeo
 
         for (; (i + 2) * TILE_SIZE <= M; i += 2, a += 2 * spacing(A))
         {
-            GemmKernel<ET, 2, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 2, 1, TILE_SIZE> ker;
             size_t j = 0;
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
@@ -135,7 +135,7 @@ namespace blazefeo
 
         for (; (i + 1) * TILE_SIZE <= M; ++i, a += spacing(A))
         {
-            GemmKernel<ET, 1, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
 
             size_t j = 0;
             ET const * b = tile(B, 0, 0);
@@ -153,7 +153,7 @@ namespace blazefeo
 
         for (; i * TILE_SIZE < M; ++i, a += spacing(A))
         {
-            GemmKernel<ET, 1, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
 
             size_t const rm = std::min(M - i * TILE_SIZE, TILE_SIZE);
             size_t j = 0;

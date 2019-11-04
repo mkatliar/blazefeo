@@ -1,6 +1,6 @@
-#include <blazefeo/math/panel/gemm/GemmKernel_double_1_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_2_1_4.hpp>
-#include <blazefeo/math/panel/gemm/GemmKernel_double_3_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
+#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
 #include <blazefeo/math/StaticPanelMatrix.hpp>
 
 #include <test/Testing.hpp>
@@ -10,18 +10,18 @@
 namespace blazefeo :: testing
 {
     template <typename Ker>
-    class GemmKernelTest
+    class RegisterMatrixTest
     :   public Test
     {
     };
 
 
-    TYPED_TEST_SUITE_P(GemmKernelTest);
+    TYPED_TEST_SUITE_P(RegisterMatrixTest);
 
 
-    TYPED_TEST_P(GemmKernelTest, testLoadStore)
+    TYPED_TEST_P(RegisterMatrixTest, testLoadStore)
     {
-        using Traits = GemmKernelTraits<TypeParam>;
+        using Traits = RegisterMatrixTraits<TypeParam>;
 
         blaze::StaticMatrix<double, Traits::rows, Traits::columns, blaze::columnMajor> A_ref;
         randomize(A_ref);
@@ -39,9 +39,9 @@ namespace blazefeo :: testing
     }
 
 
-    TYPED_TEST_P(GemmKernelTest, testStore)
+    TYPED_TEST_P(RegisterMatrixTest, testStore)
     {
-        using Traits = GemmKernelTraits<TypeParam>;
+        using Traits = RegisterMatrixTraits<TypeParam>;
 
         blaze::StaticMatrix<double, Traits::rows, Traits::columns, blaze::columnMajor> A_ref;
         randomize(A_ref);
@@ -66,9 +66,9 @@ namespace blazefeo :: testing
     }
 
 
-    TYPED_TEST_P(GemmKernelTest, testGerNT)
+    TYPED_TEST_P(RegisterMatrixTest, testGerNT)
     {
-        using Traits = GemmKernelTraits<TypeParam>;
+        using Traits = RegisterMatrixTraits<TypeParam>;
 
         blaze::DynamicMatrix<double, blaze::columnMajor> ma(Traits::rows, 1);
         blaze::DynamicMatrix<double, blaze::columnMajor> mb(Traits::columns, 1);
@@ -97,9 +97,9 @@ namespace blazefeo :: testing
     }
 
 
-    TYPED_TEST_P(GemmKernelTest, testPotrf)
+    TYPED_TEST_P(RegisterMatrixTest, testPotrf)
     {
-        using Traits = GemmKernelTraits<TypeParam>;
+        using Traits = RegisterMatrixTraits<TypeParam>;
         TypeParam ker;
 
         if constexpr (Traits::rows == Traits::columns)
@@ -118,14 +118,14 @@ namespace blazefeo :: testing
         }
         else
         {
-            std::clog << "GemmKernelTest.testPotrf not implemented for non-square kernels!" << std::endl;
+            std::clog << "RegisterMatrixTest.testPotrf not implemented for non-square kernels!" << std::endl;
         }        
     }
 
 
-    TYPED_TEST_P(GemmKernelTest, testTrsmRLT)
+    TYPED_TEST_P(RegisterMatrixTest, testTrsmRLT)
     {
-        using Traits = GemmKernelTraits<TypeParam>;
+        using Traits = RegisterMatrixTraits<TypeParam>;
         TypeParam ker;
 
         if constexpr (Traits::rows == Traits::columns)
@@ -155,12 +155,12 @@ namespace blazefeo :: testing
         }
         else
         {
-            std::clog << "GemmKernelTest.testTrsmRLT not implemented for non-square kernels!" << std::endl;
+            std::clog << "RegisterMatrixTest.testTrsmRLT not implemented for non-square kernels!" << std::endl;
         }        
     }
 
 
-    REGISTER_TYPED_TEST_SUITE_P(GemmKernelTest,
+    REGISTER_TYPED_TEST_SUITE_P(RegisterMatrixTest,
         testLoadStore,
         testStore,
         testGerNT,
@@ -169,18 +169,18 @@ namespace blazefeo :: testing
     );
 
 
-    using GemmKernel_double_1_1_4 = GemmKernel<double, 1, 1, 4>;
-    using GemmKernel_double_2_1_4 = GemmKernel<double, 2, 1, 4>;
-    using GemmKernel_double_3_1_4 = GemmKernel<double, 3, 1, 4>;
+    using RegisterMatrix_double_1_1_4 = RegisterMatrix<double, 1, 1, 4>;
+    using RegisterMatrix_double_2_1_4 = RegisterMatrix<double, 2, 1, 4>;
+    using RegisterMatrix_double_3_1_4 = RegisterMatrix<double, 3, 1, 4>;
 
-    INSTANTIATE_TYPED_TEST_SUITE_P(GemmKernel_double_1_1_4, GemmKernelTest, GemmKernel_double_1_1_4);
-    INSTANTIATE_TYPED_TEST_SUITE_P(GemmKernel_double_2_1_4, GemmKernelTest, GemmKernel_double_2_1_4);
-    INSTANTIATE_TYPED_TEST_SUITE_P(GemmKernel_double_3_1_4, GemmKernelTest, GemmKernel_double_3_1_4);
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_1_1_4, RegisterMatrixTest, RegisterMatrix_double_1_1_4);
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_1_4, RegisterMatrixTest, RegisterMatrix_double_2_1_4);
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_3_1_4, RegisterMatrixTest, RegisterMatrix_double_3_1_4);
 
 
-    TEST(GemmKernel_double_1_1_4_Test, testPotrf)
+    TEST(RegisterMatrix_double_1_1_4_Test, testPotrf)
     {
-        GemmKernel<double, 1, 1, 4> ker;
+        RegisterMatrix<double, 1, 1, 4> ker;
 
         StaticPanelMatrix<double, 4, 4, rowMajor> A {
             {4,     6,    10,    16},
@@ -199,9 +199,9 @@ namespace blazefeo :: testing
     }
 
 
-    TEST(GemmKernel_double_1_1_4_Test, testTrsmRLT)
+    TEST(RegisterMatrix_double_1_1_4_Test, testTrsmRLT)
     {
-        GemmKernel<double, 1, 1, 4> ker;
+        RegisterMatrix<double, 1, 1, 4> ker;
 
         StaticPanelMatrix<double, 4, 4, rowMajor> L {
             {2,            0,            0,            0},

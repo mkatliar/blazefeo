@@ -6,10 +6,10 @@ find_package(Threads REQUIRED)
 add_executable(bench-blazefeo
     Main.cpp
     
-    gemm_kernel/Ger.cpp
-    gemm_kernel/Store.cpp
-    gemm_kernel/StoreVariableSize.cpp
-    gemm_kernel/Potrf.cpp
+    register_matrix/Ger.cpp
+    register_matrix/Store.cpp
+    register_matrix/StoreVariableSize.cpp
+    register_matrix/Potrf.cpp
 
     GemmStatic.cpp
     GemmDynamic.cpp

@@ -36,7 +36,7 @@ namespace blazefeo
         if (columns(L) != M)
             BLAZE_THROW_INVALID_ARGUMENT("Invalid matrix size");
 
-        GemmKernel<ET, 1, 1, TILE_SIZE> ker;
+        RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
 
         if (TILE_SIZE <= M)
         {

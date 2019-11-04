@@ -8,9 +8,9 @@
 namespace blazefeo :: benchmark
 {
     template <typename Kernel>
-    static void BM_GemmKernel_store(State& state)
+    static void BM_RegisterMatrix_store(State& state)
     {
-        using Traits = GemmKernelTraits<Kernel>;
+        using Traits = RegisterMatrixTraits<Kernel>;
         size_t constexpr M = Traits::rows;
         size_t constexpr N = Traits::columns;
 
@@ -30,7 +30,7 @@ namespace blazefeo :: benchmark
     }
 
 
-    BENCHMARK_TEMPLATE(BM_GemmKernel_store, GemmKernel<double, 1, 1, 4>);
-    BENCHMARK_TEMPLATE(BM_GemmKernel_store, GemmKernel<double, 2, 1, 4>);
-    BENCHMARK_TEMPLATE(BM_GemmKernel_store, GemmKernel<double, 3, 1, 4>);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, RegisterMatrix<double, 1, 1, 4>);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, RegisterMatrix<double, 2, 1, 4>);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, RegisterMatrix<double, 3, 1, 4>);
 }

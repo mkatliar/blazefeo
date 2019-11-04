@@ -10,17 +10,17 @@ namespace blazefeo
 
     
     template <typename T, size_t M, size_t N, size_t BS>
-    class GemmKernel;
+    class RegisterMatrix;
 
 
     template <typename Ker>
-    struct GemmKernelTraits;
+    struct RegisterMatrixTraits;
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    struct GemmKernelTraits<GemmKernel<T, M, N, BS>>
+    struct RegisterMatrixTraits<RegisterMatrix<T, M, N, BS>>
     {
-        static size_t constexpr alignment = GemmKernel<T, M, N, BS>::alignment;
+        static size_t constexpr alignment = RegisterMatrix<T, M, N, BS>::alignment;
         static size_t constexpr blockSize = BS;
         static size_t constexpr blockRows = M;
         static size_t constexpr blockColumns = N;
@@ -34,7 +34,7 @@ namespace blazefeo
 
 
     template <bool LeftSide, bool Upper, bool TransA, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void trsm(GemmKernel<T, M, N, BS>& ker, T const * a, T * x)
+    BLAZE_ALWAYS_INLINE void trsm(RegisterMatrix<T, M, N, BS>& ker, T const * a, T * x)
     {
         ker.template trsm<LeftSide, Upper, TransA>(a, x);
     }
@@ -42,7 +42,7 @@ namespace blazefeo
 
     /// @brief Rank-1 update
     template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void ger(GemmKernel<T, M, N, BS>& ker, T alpha, T const * a, size_t sa, T const * b, size_t sb)
+    BLAZE_ALWAYS_INLINE void ger(RegisterMatrix<T, M, N, BS>& ker, T alpha, T const * a, size_t sa, T const * b, size_t sb)
     {
         ker.template ger<TA, TB>(alpha, a, sa, b, sb);
     }
@@ -50,49 +50,49 @@ namespace blazefeo
 
     /// @brief Rank-1 update of specified size
     template <bool TA, bool TB, typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void ger(GemmKernel<T, M, N, BS>& ker, T alpha, T const * a, size_t sa, T const * b, size_t sb, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void ger(RegisterMatrix<T, M, N, BS>& ker, T alpha, T const * a, size_t sa, T const * b, size_t sb, size_t m, size_t n)
     {
         ker.template ger<TA, TB>(alpha, a, sa, b, sb, m, n);
     }
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T const * a, size_t sa)
+    BLAZE_ALWAYS_INLINE void load(RegisterMatrix<T, M, N, BS>& ker, T const * a, size_t sa)
     {
         ker.load(1.0, a, sa);
     }
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T const * a, size_t sa, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void load(RegisterMatrix<T, M, N, BS>& ker, T const * a, size_t sa, size_t m, size_t n)
     {
         ker.load(1.0, a, sa, m, n);
     }
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T beta, T const * a, size_t sa)
+    BLAZE_ALWAYS_INLINE void load(RegisterMatrix<T, M, N, BS>& ker, T beta, T const * a, size_t sa)
     {
         ker.load(beta, a, sa);
     }
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void load(GemmKernel<T, M, N, BS>& ker, T beta, T const * a, size_t sa, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void load(RegisterMatrix<T, M, N, BS>& ker, T beta, T const * a, size_t sa, size_t m, size_t n)
     {
         ker.load(beta, a, sa, m, n);
     }
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void store(GemmKernel<T, M, N, BS> const& ker, T * a, size_t sa)
+    BLAZE_ALWAYS_INLINE void store(RegisterMatrix<T, M, N, BS> const& ker, T * a, size_t sa)
     {
         ker.store(a, sa);
     }
 
 
     template <typename T, size_t M, size_t N, size_t BS>
-    BLAZE_ALWAYS_INLINE void store(GemmKernel<T, M, N, BS> const& ker, T * a, size_t sa, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void store(RegisterMatrix<T, M, N, BS> const& ker, T * a, size_t sa, size_t m, size_t n)
     {
         ker.store(a, sa, m, n);
     }

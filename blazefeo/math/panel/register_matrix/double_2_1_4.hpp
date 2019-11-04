@@ -1,6 +1,6 @@
 #pragma once
 
-#include <blazefeo/math/panel/gemm/GemmKernel.hpp>
+#include <blazefeo/math/panel/register_matrix/RegisterMatrix.hpp>
 
 #include <blazefeo/simd/Hsum.hpp>
 #include <blazefeo/Exception.hpp>
@@ -13,10 +13,10 @@
 namespace blazefeo
 {
     template <>
-    class GemmKernel<double, 2, 1, 4>
+    class RegisterMatrix<double, 2, 1, 4>
     {
     public:
-        GemmKernel()
+        RegisterMatrix()
         {            
         }
 
@@ -139,7 +139,7 @@ namespace blazefeo
 
 
     template <>
-    inline void GemmKernel<double, 2, 1, 4>::ger<false, true>(
+    inline void RegisterMatrix<double, 2, 1, 4>::ger<false, true>(
         double alpha, double const * a, size_t sa, double const * b, size_t sb)
     {
         __m256d const a0 = alpha * _mm256_load_pd(a);
@@ -164,7 +164,7 @@ namespace blazefeo
 
 
     template <>
-    inline void GemmKernel<double, 2, 1, 4>::ger<false, true>(
+    inline void RegisterMatrix<double, 2, 1, 4>::ger<false, true>(
         double alpha, double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
     {
         __m256d const a0 = alpha * _mm256_load_pd(a);

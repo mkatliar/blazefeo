@@ -1,6 +1,6 @@
 #pragma once
 
-#include <blazefeo/math/panel/gemm/GemmKernel.hpp>
+#include <blazefeo/math/panel/register_matrix/RegisterMatrix.hpp>
 
 #include <blazefeo/simd/Hsum.hpp>
 #include <blazefeo/Exception.hpp>
@@ -13,10 +13,10 @@
 namespace blazefeo
 {
     template <>
-    class GemmKernel<double, 1, 1, 4>
+    class RegisterMatrix<double, 1, 1, 4>
     {
     public:
-        GemmKernel()
+        RegisterMatrix()
         {            
         }
 
@@ -132,7 +132,7 @@ namespace blazefeo
 
 
     template <>
-    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::ger<false, true>(double alpha, double const * a, size_t sa, double const * b, size_t sb)
+    BLAZE_ALWAYS_INLINE void RegisterMatrix<double, 1, 1, 4>::ger<false, true>(double alpha, double const * a, size_t sa, double const * b, size_t sb)
     {
         __m256d const a_v0 = alpha * _mm256_load_pd(a);
         v_[0] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 0), v_[0]);
@@ -143,7 +143,7 @@ namespace blazefeo
 
 
     template <>
-    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::ger<false, true>(double alpha, double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
+    BLAZE_ALWAYS_INLINE void RegisterMatrix<double, 1, 1, 4>::ger<false, true>(double alpha, double const * a, size_t sa, double const * b, size_t sb, size_t m, size_t n)
     {
         __m256d const a_v0 = alpha * _mm256_load_pd(a);
 
@@ -162,7 +162,7 @@ namespace blazefeo
 
 
     template <>
-    BLAZE_ALWAYS_INLINE void GemmKernel<double, 1, 1, 4>::trsm<false, false, true>(double const * a, double * x) const
+    BLAZE_ALWAYS_INLINE void RegisterMatrix<double, 1, 1, 4>::trsm<false, false, true>(double const * a, double * x) const
     {
         __m256d xx[4];
         xx[0] = _mm256_load_pd(a + 0);
