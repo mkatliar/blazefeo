@@ -3,7 +3,10 @@
 #include <blazefeo/math/simd/Simd.hpp>
 
 #include <blaze/util/Types.h>
+#include <blaze/util/Exception.h>
 #include <blaze/system/Inline.h>
+
+#include <cmath>
 
 #include <immintrin.h>
 
@@ -20,6 +23,18 @@ namespace blazefeo
         /// @brief Default ctor
         RegisterMatrix()
         {
+        }
+
+
+        static size_t constexpr rows()
+        {
+            return M * SS;
+        }
+
+
+        static size_t constexpr columns()
+        {
+            return N;
         }
 
 
@@ -81,7 +96,7 @@ namespace blazefeo
     };
 
 
-    template<typename T, size_t M, size_t N, size_t SS>
+    template <typename T, size_t M, size_t N, size_t SS>
     inline void RegisterMatrix<T, M, N, SS>::load(T beta, T const * ptr, size_t spacing)
     {
         for (size_t i = 0; i < M; ++i)
@@ -90,7 +105,7 @@ namespace blazefeo
     }
 
 
-    template<typename T, size_t M, size_t N, size_t SS>
+    template <typename T, size_t M, size_t N, size_t SS>
     inline void RegisterMatrix<T, M, N, SS>::store(T * ptr, size_t spacing) const
     {
         for (size_t i = 0; i < M; ++i)
@@ -99,10 +114,72 @@ namespace blazefeo
     }
 
 
+    template <typename T, size_t M, size_t N, size_t SS>
+    inline void RegisterMatrix<T, M, N, SS>::store(T * ptr, size_t spacing, size_t m, size_t n) const
+    {
+        for (size_t i = 0; i < M; ++i) if (SS * (i + 1) <= m)
+            // The compile-time constant size of the j loop in combination with the if() expression
+            // prevent Clang from emitting memcpy() call here and produce good enough code with the loop unrolled.
+            for (size_t j = 0; j < N; ++j) if (j < n)
+                blazefeo::store(ptr + spacing * i + SS * j, v_[i][j]);
+
+        if (long long const rem = m % SS)
+        {
+            static_assert(SS == 4, "Partial store of RegisterMatrix for SIMD size is not implemented");
+
+            __m256i const mask = set(rem, rem, rem, rem) > set(3LL, 2LL, 1LL, 0LL);
+            size_t const i = m / SS;
+
+            for (size_t j = 0; j < n && j < columns(); ++j)
+                _mm256_maskstore_pd(ptr + spacing * i + SS * j, mask, v_[i][j]);
+        }
+    }
+
+
+    template <typename T, size_t M, size_t N, size_t SS>
+    template <bool LeftSide, bool Upper, bool TransA>
+    void RegisterMatrix<T, M, N, SS>::trsm(T const * a, T * x) const
+    {
+        BLAZE_THROW_LOGIC_ERROR("Not implemented");
+    }
+
+
+    template <typename T, size_t M, size_t N, size_t SS>
+    template <bool TA, bool TB>
+    void RegisterMatrix<T, M, N, SS>::ger(T alpha, T const * a, size_t sa, T const * b, size_t sb)
+    {
+        BLAZE_THROW_LOGIC_ERROR("Not implemented");
+    }
+
+
     template <bool LeftSide, bool Upper, bool TransA, typename T, size_t M, size_t N, size_t SS>
     BLAZE_ALWAYS_INLINE void trsm(RegisterMatrix<T, M, N, SS>& ker, T const * a, T * x)
     {
         ker.template trsm<LeftSide, Upper, TransA>(a, x);
+    }
+
+
+    template <typename T, size_t M, size_t N, size_t SS>
+    BLAZE_ALWAYS_INLINE void RegisterMatrix<T, M, N, SS>::potrf()
+    {
+        static_assert(M * SS == N, "potrf() not implemented for non-square register matrices");
+        
+        for (size_t k = 0; k < M * SS; ++k)
+        {
+            for (size_t i = 0; i < k / SS; ++i)
+                v_[i][k] = setzero<T, SS>();
+
+            for (size_t j = 0; j < k; ++j)
+                for (size_t i = k / SS; i < M; ++i)
+                {
+                    T const a_kj = v_[k / SS][j][k % SS];
+                    v_[i][k] = fnmadd(set(a_kj, a_kj, a_kj, a_kj), v_[i][j], v_[i][k]);
+                }
+
+            T const inv_sqrt_a_kk = T(1.) / std::sqrt(v_[k / SS][k][k % SS]);
+            for (size_t i = k / SS; i < M; ++i)
+                v_[i][k] *= inv_sqrt_a_kk;
+        }     
     }
 
 

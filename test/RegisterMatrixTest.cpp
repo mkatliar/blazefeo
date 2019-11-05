@@ -37,7 +37,7 @@ namespace blazefeo :: testing
     }
 
 
-    TYPED_TEST_P(RegisterMatrixTest, testStore)
+    TYPED_TEST_P(RegisterMatrixTest, testPartialStore)
     {
         using Traits = RegisterMatrixTraits<TypeParam>;
 
@@ -102,15 +102,17 @@ namespace blazefeo :: testing
 
         if constexpr (Traits::rows == Traits::columns)
         {
-            StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> A, B, A1;
+            StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> A, L, A1;
             makePositiveDefinite(A);
 
             load(ker, A.tile(0, 0), A.spacing());
             ker.potrf();
-            store(ker, B.tile(0, 0), B.spacing());
+            store(ker, L.tile(0, 0), L.spacing());
+
+            // std::cout << "L=\n" << L << std::endl;
             
             A1 = 0.;
-            gemm_nt(B, B, A1, A1);
+            gemm_nt(L, L, A1, A1);
 
             BLAZEFEO_ASSERT_APPROX_EQ(A1, A, 1e-15, 1e-15);
         }
@@ -160,7 +162,7 @@ namespace blazefeo :: testing
 
     REGISTER_TYPED_TEST_SUITE_P(RegisterMatrixTest,
         testLoadStore,
-        testStore,
+        testPartialStore,
         testGerNT,
         testPotrf,
         testTrsmRLT
@@ -170,31 +172,12 @@ namespace blazefeo :: testing
     using RegisterMatrix_double_1_4_4 = RegisterMatrix<double, 1, 4, 4>;
     using RegisterMatrix_double_2_4_4 = RegisterMatrix<double, 2, 4, 4>;
     using RegisterMatrix_double_3_4_4 = RegisterMatrix<double, 3, 4, 4>;
+    using RegisterMatrix_double_2_8_4 = RegisterMatrix<double, 2, 8, 4>;
 
     INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_1_4_4, RegisterMatrixTest, RegisterMatrix_double_1_4_4);
     INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_4_4, RegisterMatrixTest, RegisterMatrix_double_2_4_4);
     INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_3_4_4, RegisterMatrixTest, RegisterMatrix_double_3_4_4);
-
-
-    TEST(RegisterMatrix_double_1_4_4_Test, testPotrf)
-    {
-        RegisterMatrix<double, 1, 4, 4> ker;
-
-        StaticPanelMatrix<double, 4, 4, rowMajor> A {
-            {4,     6,    10,    16},
-            {6,    25,    39,    60},
-            {10,    39,   110,   164},
-            {16,    60,   164,   366},
-        };
-
-        std::cout << A << std::endl;
-
-        load(ker, A.tile(0, 0), A.spacing());
-        ker.potrf();
-        store(ker, A.tile(0, 0), A.spacing());
-
-        std::cout << A << std::endl;
-    }
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_8_4, RegisterMatrixTest, RegisterMatrix_double_2_8_4);
 
 
     TEST(RegisterMatrix_double_1_4_4_Test, testTrsmRLT)

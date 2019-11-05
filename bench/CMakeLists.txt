@@ -8,7 +8,7 @@ add_executable(bench-blazefeo
     
     register_matrix/Ger.cpp
     register_matrix/Store.cpp
-    register_matrix/StoreVariableSize.cpp
+    register_matrix/PartialStore.cpp
     register_matrix/Potrf.cpp
 
     GemmStatic.cpp
