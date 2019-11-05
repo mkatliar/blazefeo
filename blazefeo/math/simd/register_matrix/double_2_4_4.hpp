@@ -11,20 +11,6 @@
 namespace blazefeo
 {
     template<>
-    inline void RegisterMatrix<double, 2, 4, 4>::load(double beta, double const * ptr, size_t spacing)
-    {
-        v_[0][0] = beta * _mm256_load_pd(ptr);
-        v_[0][1] = beta * _mm256_load_pd(ptr + 4);
-        v_[0][2] = beta * _mm256_load_pd(ptr + 8);
-        v_[0][3] = beta * _mm256_load_pd(ptr + 12);
-        v_[1][0] = beta * _mm256_load_pd(ptr + spacing);
-        v_[1][1] = beta * _mm256_load_pd(ptr + spacing + 4);
-        v_[1][2] = beta * _mm256_load_pd(ptr + spacing + 8);
-        v_[1][3] = beta * _mm256_load_pd(ptr + spacing + 12);
-    }
-
-
-    template<>
     inline void RegisterMatrix<double, 2, 4, 4>::load(double beta, double const * ptr, size_t spacing, size_t m, size_t n)
     {
         if (n > 0)
@@ -50,20 +36,6 @@ namespace blazefeo
             v_[0][3] = beta * _mm256_load_pd(ptr + 12);
             v_[1][3] = beta * _mm256_load_pd(ptr + spacing + 12);
         }
-    }
-
-
-    template<>
-    inline void RegisterMatrix<double, 2, 4, 4>::store(double * ptr, size_t spacing) const
-    {
-        _mm256_store_pd(ptr, v_[0][0]);
-        _mm256_store_pd(ptr + 4, v_[0][1]);
-        _mm256_store_pd(ptr + 8, v_[0][2]);
-        _mm256_store_pd(ptr + 12, v_[0][3]);
-        _mm256_store_pd(ptr + spacing, v_[1][0]);
-        _mm256_store_pd(ptr + spacing + 4, v_[1][1]);
-        _mm256_store_pd(ptr + spacing + 8, v_[1][2]);
-        _mm256_store_pd(ptr + spacing + 12, v_[1][3]);
     }
 
 

@@ -20,4 +20,21 @@ namespace blazefeo
     {
         using IntrinsicType = __m256d;
     };
+
+
+    template <size_t SS, typename T>
+    auto load(T const * ptr);
+
+
+    template <>
+    inline auto load<4, double>(double const * ptr)
+    {
+        return _mm256_load_pd(ptr);
+    }
+
+
+    inline void store(double * ptr, __m256d a)
+    {
+        _mm256_store_pd(ptr, a);
+    }
 }
