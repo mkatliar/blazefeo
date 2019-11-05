@@ -34,6 +34,7 @@ namespace blazefeo :: benchmark
 
 
     BENCHMARK_TEMPLATE(BM_RegisterMatrix_potrf, double, 1, 4, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_potrf, double, 2, 8, 4);
     // BENCHMARK_TEMPLATE(BM_RegisterMatrix_gemm_nt, double, 2, 4, 4);
     // BENCHMARK_TEMPLATE(BM_RegisterMatrix_gemm_nt, double, 3, 4, 4);
 }
