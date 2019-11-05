@@ -1,5 +1,3 @@
-#include <blazefeo/simd/Hsum.hpp>
-
 #include <test/Testing.hpp>
 #include <test/Randomize.hpp>
 

@@ -1,16 +1,68 @@
 #pragma once
 
+#include <blazefeo/math/simd/Simd.hpp>
+
 #include <blaze/util/Types.h>
 #include <blaze/system/Inline.h>
+
+#include <immintrin.h>
 
 
 namespace blazefeo
 {
     using namespace blaze;
 
-    
-    template <typename T, size_t M, size_t N, size_t BS>
-    class RegisterMatrix;
+
+    template <typename T, size_t M, size_t N, size_t SIMD_SIZE>
+    class RegisterMatrix
+    {
+    public:
+        /// @brief Default ctor
+        RegisterMatrix()
+        {
+        }
+
+
+        /// @brief load from memory
+        void load(T beta, T const * ptr, size_t spacing);
+
+
+        /// @brief load from memory with specified size
+        void load(T beta, T const * ptr, size_t spacing, size_t m, size_t n);
+
+
+        /// @brief store to memory
+        void store(T * ptr, size_t spacing) const;
+
+
+        /// @brief store to memory with specified size
+        void store(T * ptr, size_t spacing, size_t m, size_t n) const;
+
+
+        /// @brief Rank-1 update
+        template <bool TA, bool TB>
+        void ger(T alpha, T const * a, size_t sa, T const * b, size_t sb);
+
+
+        /// @brief Rank-1 update of specified size
+        template <bool TA, bool TB>
+        void ger(T alpha, T const * a, size_t sa, T const * b, size_t sb, size_t m, size_t n);
+
+
+        /// @brief In-place Cholesky decomposition
+        void potrf();
+
+
+        /// @brief Triangular substitution
+        template <bool LeftSide, bool Upper, bool TransA>
+        void trsm(T const * a, T * x) const;
+
+
+    private:
+        using IntrinsicType = typename Simd<T, SIMD_SIZE>::IntrinsicType;
+        
+        IntrinsicType v_[M][N];
+    };
 
 
     template <typename Ker>
@@ -20,14 +72,10 @@ namespace blazefeo
     template <typename T, size_t M, size_t N, size_t BS>
     struct RegisterMatrixTraits<RegisterMatrix<T, M, N, BS>>
     {
-        static size_t constexpr alignment = RegisterMatrix<T, M, N, BS>::alignment;
-        static size_t constexpr blockSize = BS;
-        static size_t constexpr blockRows = M;
-        static size_t constexpr blockColumns = N;
+        static size_t constexpr simdSize = BS;
         static size_t constexpr rows = M * BS;
-        static size_t constexpr columns = N * BS;
+        static size_t constexpr columns = N;
         static size_t constexpr elementCount = rows * columns;
-        static size_t constexpr blockElementCount = BS * BS;
         
         using ElementType = T;
     };

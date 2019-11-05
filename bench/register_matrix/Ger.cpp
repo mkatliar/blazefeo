@@ -1,7 +1,5 @@
 #include <blazefeo/math/StaticPanelMatrix.hpp>
-#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
+#include <blazefeo/math/simd/RegisterMatrix.hpp>
 
 #include <bench/Benchmark.hpp>
 
@@ -40,7 +38,7 @@ namespace blazefeo :: benchmark
     }
 
 
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 1, 1, 4);
-    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 2, 1, 4);
-    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 3, 1, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 1, 4, 4);
+    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 2, 4, 4);
+    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_ger_nt, double, 3, 4, 4);
 }

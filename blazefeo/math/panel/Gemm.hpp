@@ -1,10 +1,7 @@
 #pragma once
 
 #include <blazefeo/math/PanelMatrix.hpp>
-#include <blazefeo/math/panel/register_matrix/RegisterMatrix.hpp>
-#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
+#include <blazefeo/math/simd/RegisterMatrix.hpp>
 #include <blazefeo/system/Tile.hpp>
 
 #include <blaze/util/Exception.h>
@@ -103,7 +100,7 @@ namespace blazefeo
         // it is more efficient to apply 2 * TILE_SIZE kernel 2 times than 3 * TILE_SIZE + 1 * TILE_SIZE kernel.
         for (; (i + 3) * TILE_SIZE <= M && (i + 4) * TILE_SIZE != M; i += 3, a += 3 * spacing(A))
         {
-            RegisterMatrix<ET, 3, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 3, TILE_SIZE, TILE_SIZE> ker;
             size_t j = 0;
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
@@ -119,7 +116,7 @@ namespace blazefeo
 
         for (; (i + 2) * TILE_SIZE <= M; i += 2, a += 2 * spacing(A))
         {
-            RegisterMatrix<ET, 2, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 2, TILE_SIZE, TILE_SIZE> ker;
             size_t j = 0;
 
             for (; (j + 1) * TILE_SIZE <= N; ++j)
@@ -135,7 +132,7 @@ namespace blazefeo
 
         for (; (i + 1) * TILE_SIZE <= M; ++i, a += spacing(A))
         {
-            RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
 
             size_t j = 0;
             ET const * b = tile(B, 0, 0);
@@ -153,7 +150,7 @@ namespace blazefeo
 
         for (; i * TILE_SIZE < M; ++i, a += spacing(A))
         {
-            RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
+            RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
 
             size_t const rm = std::min(M - i * TILE_SIZE, TILE_SIZE);
             size_t j = 0;

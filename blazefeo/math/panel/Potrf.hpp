@@ -33,7 +33,7 @@ namespace blazefeo
             submatrix(~A, K, K, M - K, TILE_SIZE, unchecked),
             L1);
 
-        RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
+        RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
         load(ker, tile(L, k, k), spacing(L));
         ker.potrf();
         store(ker, tile(L, k, k), spacing(L));
@@ -63,7 +63,7 @@ namespace blazefeo
         if (columns(L) != M)
             BLAZE_THROW_INVALID_ARGUMENT("Invalid matrix size");
 
-        RegisterMatrix<ET, 1, 1, TILE_SIZE> ker;
+        RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
 
         size_t k = 0;
 

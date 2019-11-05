@@ -1,7 +1,5 @@
 #include <blazefeo/math/StaticPanelMatrix.hpp>
-#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
+#include <blazefeo/math/simd/RegisterMatrix.hpp>
 
 #include <bench/Benchmark.hpp>
 
@@ -65,7 +63,7 @@ namespace blazefeo :: benchmark
 
     using std::placeholders::_1;
 
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 1, 1, 4>)->Apply(args_4_4);
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 2, 1, 4>)->Apply(args_8_4);
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 3, 1, 4>)->Apply(args_12_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 1, 4, 4>)->Apply(args_4_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 2, 4, 4>)->Apply(args_8_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_storeVariableSize, RegisterMatrix<double, 3, 4, 4>)->Apply(args_12_4);
 }

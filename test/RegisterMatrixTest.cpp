@@ -1,6 +1,4 @@
-#include <blazefeo/math/panel/register_matrix/double_1_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_2_1_4.hpp>
-#include <blazefeo/math/panel/register_matrix/double_3_1_4.hpp>
+#include <blazefeo/math/simd/RegisterMatrix.hpp>
 #include <blazefeo/math/StaticPanelMatrix.hpp>
 
 #include <test/Testing.hpp>
@@ -169,18 +167,18 @@ namespace blazefeo :: testing
     );
 
 
-    using RegisterMatrix_double_1_1_4 = RegisterMatrix<double, 1, 1, 4>;
-    using RegisterMatrix_double_2_1_4 = RegisterMatrix<double, 2, 1, 4>;
-    using RegisterMatrix_double_3_1_4 = RegisterMatrix<double, 3, 1, 4>;
+    using RegisterMatrix_double_1_4_4 = RegisterMatrix<double, 1, 4, 4>;
+    using RegisterMatrix_double_2_4_4 = RegisterMatrix<double, 2, 4, 4>;
+    using RegisterMatrix_double_3_4_4 = RegisterMatrix<double, 3, 4, 4>;
 
-    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_1_1_4, RegisterMatrixTest, RegisterMatrix_double_1_1_4);
-    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_1_4, RegisterMatrixTest, RegisterMatrix_double_2_1_4);
-    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_3_1_4, RegisterMatrixTest, RegisterMatrix_double_3_1_4);
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_1_4_4, RegisterMatrixTest, RegisterMatrix_double_1_4_4);
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_4_4, RegisterMatrixTest, RegisterMatrix_double_2_4_4);
+    INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_3_4_4, RegisterMatrixTest, RegisterMatrix_double_3_4_4);
 
 
-    TEST(RegisterMatrix_double_1_1_4_Test, testPotrf)
+    TEST(RegisterMatrix_double_1_4_4_Test, testPotrf)
     {
-        RegisterMatrix<double, 1, 1, 4> ker;
+        RegisterMatrix<double, 1, 4, 4> ker;
 
         StaticPanelMatrix<double, 4, 4, rowMajor> A {
             {4,     6,    10,    16},
@@ -199,9 +197,9 @@ namespace blazefeo :: testing
     }
 
 
-    TEST(RegisterMatrix_double_1_1_4_Test, testTrsmRLT)
+    TEST(RegisterMatrix_double_1_4_4_Test, testTrsmRLT)
     {
-        RegisterMatrix<double, 1, 1, 4> ker;
+        RegisterMatrix<double, 1, 4, 4> ker;
 
         StaticPanelMatrix<double, 4, 4, rowMajor> L {
             {2,            0,            0,            0},
