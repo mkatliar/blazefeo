@@ -203,7 +203,7 @@ namespace blazefeo
                 T const a_kj = v_[k / SS][j][k % SS];
 
                 #pragma unroll
-                for (size_t i = k / SS; i < M; ++i)
+                for (size_t i = 0; i < M; ++i) if (i >= k / SS)
                     v_[i][k] = fnmadd(set(a_kj, a_kj, a_kj, a_kj), v_[i][j], v_[i][k]);
             }
 

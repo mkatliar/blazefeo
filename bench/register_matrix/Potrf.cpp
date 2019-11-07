@@ -1,7 +1,9 @@
 #include <blazefeo/math/StaticPanelMatrix.hpp>
+#include <blazefeo/math/DynamicPanelMatrix.hpp>
 #include <blazefeo/math/simd/RegisterMatrix.hpp>
 
 #include <bench/Benchmark.hpp>
+#include <bench/Complexity.hpp>
 
 #include <test/Randomize.hpp>
 
@@ -16,7 +18,7 @@ namespace blazefeo :: benchmark
         size_t constexpr m = Traits::rows;
         size_t constexpr n = Traits::columns;
         
-        StaticPanelMatrix<double, m, n, rowMajor> a;
+        DynamicPanelMatrix<double, rowMajor> a(m, n);
         randomize(a);
 
         Kernel ker;
@@ -28,13 +30,13 @@ namespace blazefeo :: benchmark
             DoNotOptimize(ker);
         }
 
-        if (m == n)
-            state.counters["flops"] = Counter(m * m * m / 3., Counter::kIsIterationInvariantRate);
+        if (m >= n)
+            setCounters(state.counters, complexityPotrf(m, n));
     }
 
 
     BENCHMARK_TEMPLATE(BM_RegisterMatrix_potrf, double, 1, 4, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_potrf, double, 2, 4, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_potrf, double, 3, 4, 4);
     BENCHMARK_TEMPLATE(BM_RegisterMatrix_potrf, double, 2, 8, 4);
-    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_gemm_nt, double, 2, 4, 4);
-    // BENCHMARK_TEMPLATE(BM_RegisterMatrix_gemm_nt, double, 3, 4, 4);
 }
