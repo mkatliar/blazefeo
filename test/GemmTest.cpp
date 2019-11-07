@@ -1,3 +1,5 @@
+#define BLAZE_USER_ASSERTION 1
+
 #include <blazefeo/math/StaticPanelMatrix.hpp>
 #include <blazefeo/math/DynamicPanelMatrix.hpp>
 #include <blazefeo/math/views/submatrix/Panel.hpp>

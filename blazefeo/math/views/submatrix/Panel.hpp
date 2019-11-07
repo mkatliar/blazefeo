@@ -1,10 +1,12 @@
 #pragma once
 
 #include <blazefeo/math/PanelMatrix.hpp>
+#include <blazefeo/math/views/submatrix/BaseTemplate.hpp>
+#include <blazefeo/math/constraints/Submatrix.hpp>
+#include <blazefeo/system/Tile.hpp>
 
 #include <blaze/math/constraints/Submatrix.h>
 #include <blaze/math/constraints/Symmetric.h>
-#include <blaze/math/views/submatrix/SubmatrixData.h>
 #include <blaze/math/traits/SubmatrixTrait.h>
 #include <blaze/util/constraints/Pointer.h>
 #include <blaze/util/constraints/Reference.h>
@@ -35,7 +37,6 @@ namespace blazefeo
     {
     private:
         //**Type definitions****************************************************************************
-        using DataType = SubmatrixData<>;               //!< The type of the SubmatrixData base class.
         using Operand  = If_t< IsExpression_v<MT>, MT, MT& >;  //!< Composite data type of the matrix expression.
         //**********************************************************************************************
 
@@ -254,6 +255,21 @@ namespace blazefeo
         // BLAZE_CONSTRAINT_MUST_BE_ROW_MAJOR_MATRIX_TYPE( MT );
         BLAZE_CONSTRAINT_MUST_NOT_BE_POINTER_TYPE     ( MT );
         BLAZE_CONSTRAINT_MUST_NOT_BE_REFERENCE_TYPE   ( MT );
+        BLAZEFEO_CONSTRAINT_MUST_NOT_BE_PANEL_SUBMATRIX_TYPE(MT);
         //**********************************************************************************************
     };
+
+
+    template <typename MT, bool SO>
+    inline decltype(auto) submatrix(PanelSubmatrix<MT, SO> const& matrix, size_t row, size_t column, size_t m, size_t n)
+    {
+        return PanelSubmatrix<MT const, SO>(matrix.operand(), matrix.row() + row, matrix.column() + column, m, n);
+    }
+
+
+    template <typename MT, bool SO>
+    inline decltype(auto) submatrix(PanelSubmatrix<MT, SO>& matrix, size_t row, size_t column, size_t m, size_t n)
+    {
+        return PanelSubmatrix<MT, SO>(matrix.operand(), matrix.row() + row, matrix.column() + column, m, n);
+    }
 }

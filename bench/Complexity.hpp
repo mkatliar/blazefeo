@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <string>
 #include <map>
+#include <stdexcept>
 
 
 namespace blazefeo :: benchmark
@@ -14,6 +15,9 @@ namespace blazefeo :: benchmark
     /// @brief Algorithmic complexity of potrf
     inline Complexity complexityPotrf(std::size_t m, std::size_t n)
     {
+        if (m < n)
+            throw std::invalid_argument("Cannot calculate complexity of potrf for m < n");
+
         return {
             // Calculated as \sum _{k=0}^{n-1} \sum _{j=0}^{k-1} \sum _{i=k}^{m-1} 1
             {"add", (1 + 3 * m - 2 * n) * (n - 1) * n / 6},

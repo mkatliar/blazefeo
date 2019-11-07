@@ -54,6 +54,37 @@ namespace blazefeo :: testing
     }
 
 
+    TEST(SubmatrixTest, testSubmatrixOfSubmatrix)
+    {
+        DynamicPanelMatrix<double, rowMajor> A(12, 12);
+        for (size_t i = 0; i < rows(A); ++i)
+            for (size_t j = 0; j < columns(A); ++j)
+                A(i, j) = -(100. * i + j);
+
+        auto B = submatrix(A, 4, 0, 8, 8);
+        ASSERT_EQ(&B.operand(), &A);
+
+        auto B1 = submatrix(B, 4, 1, 2, 2);
+        EXPECT_EQ(&B1.operand(), &A);
+        EXPECT_EQ(B1.row(), B.row() + 4);
+        EXPECT_EQ(B1.column(), B.column() + 1);
+
+        static_assert(std::is_same_v<decltype(B), decltype(B1)>);
+
+        for (size_t i = 0; i < rows(B1); ++i)
+            for (size_t j = 0; j < columns(B1); ++j)
+                B1(i, j) = 100. * i + j;
+
+        for (size_t i = 0; i < rows(B1); ++i)
+            for (size_t j = 0; j < columns(B1); ++j)
+            {
+                auto const val = 100. * i + j;
+                ASSERT_EQ(B1(i, j), val);
+                ASSERT_EQ(A(i + B1.row(), j + B1.column()), val);
+            }
+    }
+
+
     TEST(SubmatrixTest, testTile)
     {
         DynamicPanelMatrix<double, rowMajor> A(12, 12);

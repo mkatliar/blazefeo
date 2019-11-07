@@ -36,6 +36,20 @@ namespace blazefeo
 
 
     template <typename MT, bool SO>
+    inline auto * ptr(PanelMatrix<MT, SO>& m, size_t i, size_t j)
+    {
+        return &(~m)(i, j);
+    }
+
+
+    template <typename MT, bool SO>
+    inline auto const * ptr(PanelMatrix<MT, SO> const& m, size_t i, size_t j)
+    {
+        return &(~m)(i, j);
+    }
+
+
+    template <typename MT, bool SO>
     inline size_t spacing(PanelMatrix<MT, SO> const& m)
     {
         return (~m).spacing();
