@@ -105,33 +105,14 @@ namespace blazefeo
 
         // i + 4 * TILE_SIZE != M is to improve performance in case when the remaining number of rows is 4 * TILE_SIZE:
         // it is more efficient to apply 2 * TILE_SIZE kernel 2 times than 3 * TILE_SIZE + 1 * TILE_SIZE kernel.
-        for (; i + 3 * TILE_SIZE <= M && i + 4 * TILE_SIZE != M; i += 3 * TILE_SIZE)
+        for (; i + 2 * TILE_SIZE < M && i + 4 * TILE_SIZE != M; i += 3 * TILE_SIZE)
             gemm_nt_backend<3 * TILE_SIZE, TILE_SIZE>(i, alpha, beta, ~A, ~B, ~C, ~D);
 
-        for (; i + 2 * TILE_SIZE <= M; i += 2 * TILE_SIZE)
+        for (; i + 1 * TILE_SIZE < M; i += 2 * TILE_SIZE)
             gemm_nt_backend<2 * TILE_SIZE, TILE_SIZE>(i, alpha, beta, ~A, ~B, ~C, ~D);
 
-        for (; i + 1 * TILE_SIZE <= M; i += 1 * TILE_SIZE)
+        for (; i + 0 * TILE_SIZE < M; i += 1 * TILE_SIZE)
             gemm_nt_backend<1 * TILE_SIZE, TILE_SIZE>(i, alpha, beta, ~A, ~B, ~C, ~D);
-
-        if (i < M)
-        {
-            // Use a small kernel with partial save to calculate the bottom of the resulting matrix.
-            RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
-
-            size_t j = 0;
-            ET const * b = tile(B, 0, 0);
-
-            for (; j + TILE_SIZE <= N; j += TILE_SIZE)
-                gemm_backend<false, true>(ker, K, alpha, beta,
-                    ptr(A, i, 0), spacing(A), ptr(B, j, 0), spacing(B),
-                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), M - i, TILE_SIZE);
-
-            if (j < N)
-                gemm_backend<false, true>(ker, K, alpha, beta,
-                    ptr(A, i, 0), spacing(A), ptr(B, j, 0), spacing(B),
-                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), M - i, N - j);
-        }
     }
 
 
@@ -158,20 +139,38 @@ namespace blazefeo
         BLAZE_USER_ASSERT(rows(C) == M && columns(C) == N, "Matrix sizes do not match");
         BLAZE_USER_ASSERT(rows(D) == M && columns(D) == N, "Matrix sizes do not match");
 
-        ET const * a = ptr(A, i, 0);
-
-        // TODO: this loop can be eliminated and it's function transferred to the outer loop!
         RegisterMatrix<ET, KM / TILE_SIZE, KN, TILE_SIZE> ker;
-        size_t j = 0;
 
-        for (; j + KN <= N; j += KN)
-            gemm_backend<false, true>(ker, K, alpha, beta,
-                a, spacing(A), ptr(B, j, 0), spacing(B),
-                ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D));
+        if (i + KM <= M)
+        {
+            size_t j = 0;
+            ET const * a = ptr(A, i, 0);
 
-        if (j < N)
-            gemm_backend<false, true>(ker, K, alpha, beta,
-                a, spacing(A), ptr(B, j, 0), spacing(B),
-                ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), KM, N - j);
+            for (; j + KN <= N; j += KN)
+                gemm_backend<false, true>(ker, K, alpha, beta,
+                    a, spacing(A), ptr(B, j, 0), spacing(B),
+                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D));
+
+            if (j < N)
+                gemm_backend<false, true>(ker, K, alpha, beta,
+                    a, spacing(A), ptr(B, j, 0), spacing(B),
+                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), KM, N - j);
+        }
+        else
+        {
+            // Use partial save to calculate the bottom of the resulting matrix.
+            size_t j = 0;
+            ET const * b = tile(B, 0, 0);
+
+            for (; j + KN <= N; j += KN)
+                gemm_backend<false, true>(ker, K, alpha, beta,
+                    ptr(A, i, 0), spacing(A), ptr(B, j, 0), spacing(B),
+                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), M - i, KN);
+
+            if (j < N)
+                gemm_backend<false, true>(ker, K, alpha, beta,
+                    ptr(A, i, 0), spacing(A), ptr(B, j, 0), spacing(B),
+                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), M - i, N - j);
+        }
     }
 }
