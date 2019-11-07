@@ -39,6 +39,7 @@ namespace blazefeo
     }
 
 
+#if 1
     template<>
     inline void RegisterMatrix<double, 2, 4, 4>::store(double * ptr, size_t spacing, size_t m, size_t n) const
     {
@@ -80,6 +81,7 @@ namespace blazefeo
             }
         }
     }
+#endif
 
 
     template<>

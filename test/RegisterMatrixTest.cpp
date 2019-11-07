@@ -128,35 +128,32 @@ namespace blazefeo :: testing
         using Traits = RegisterMatrixTraits<TypeParam>;
         TypeParam ker;
 
-        if constexpr (Traits::rows == Traits::columns)
-        {
-            using blaze::randomize;
-            StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> L, A, X, A1;            
-            
-            for (size_t i = 0; i < Traits::rows; ++i)
-                for (size_t j = 0; j < Traits::columns; ++j)
-                    if (j <= i)
-                        randomize(L(i, j));
-                    else
-                        reset(L(i, j));
-            
-            randomize(A);
+        using blaze::randomize;
+        StaticPanelMatrix<typename Traits::ElementType, Traits::columns, Traits::columns, rowMajor> L;
+        StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> B, X, B1;            
+        
+        for (size_t i = 0; i < Traits::rows; ++i)
+            for (size_t j = 0; j < Traits::columns; ++j)
+                if (j <= i)
+                    randomize(L(i, j));
+                else
+                    reset(L(i, j));
 
-            load(ker, L.tile(0, 0), L.spacing());
-            trsm<false, false, true>(ker, A.tile(0, 0), X.tile(0, 0));
+        randomize(B);
 
-            A1 = 0.;
-            gemm_nt(X, L, A1, A1);
+        // std::cout << "B=" << B << std::endl;
+        // std::cout << "L=" << L << std::endl;
 
-            std::cout << A << std::endl;
-            std::cout << A1 << std::endl;
+        load(ker, B.tile(0, 0), B.spacing());
+        trsm<false, false, true>(ker, L.tile(0, 0), spacing(L));
+        store(ker, X.tile(0, 0), X.spacing());
 
-            BLAZEFEO_ASSERT_APPROX_EQ(A1, A, 1e-14, 1e-14);
-        }
-        else
-        {
-            std::clog << "RegisterMatrixTest.testTrsmRLT not implemented for non-square kernels!" << std::endl;
-        }        
+        B1 = 0.;
+        gemm_nt(X, L, B1, B1);
+
+        // std::cout << B1 << std::endl;
+
+        BLAZEFEO_ASSERT_APPROX_EQ(B1, B, 1e-13, 1e-13);
     }
 
 
@@ -198,8 +195,9 @@ namespace blazefeo :: testing
             {0,   0,   0,   1},
         };
 
-        load(ker, L.tile(0, 0), L.spacing());
-        trsm<false, false, true>(ker, tile(A, 0, 0), tile(A, 0, 0));
+        load(ker, A.tile(0, 0), A.spacing());
+        trsm<false, false, true>(ker, tile(L, 0, 0), spacing(L));
+        store(ker, A.tile(0, 0), A.spacing());
 
         std::cout << A << std::endl;
     }

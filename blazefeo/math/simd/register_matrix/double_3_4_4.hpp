@@ -10,7 +10,7 @@
 
 namespace blazefeo
 {
-    template<>
+    template <>
     inline void RegisterMatrix<double, 3, 4, 4>::load(double beta, double const * ptr, size_t spacing, size_t m, size_t n)
     {
         if (n > 0)
@@ -43,7 +43,7 @@ namespace blazefeo
     }
 
 
-    template<>
+    template <>
     inline void RegisterMatrix<double, 3, 4, 4>::store(double * ptr, size_t spacing, size_t m, size_t n) const
     {
         for (size_t i = 0; i < 3; ++i)
@@ -86,7 +86,7 @@ namespace blazefeo
     }
 
 
-    template<>
+    template <>
     inline void RegisterMatrix<double, 3, 4, 4>::potrf()
     {
         BLAZE_THROW_LOGIC_ERROR("Not implemented");

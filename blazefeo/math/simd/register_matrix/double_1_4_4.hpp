@@ -25,7 +25,7 @@ namespace blazefeo
     }
 
 
-#if 0
+#if 1
     /// Magically, this function specialization is slightly faster than the default implementation of RegisterMatrix<>::store.
     template <>
     BLAZE_ALWAYS_INLINE void RegisterMatrix<double, 1, 4, 4>::store(double * ptr, size_t spacing, size_t m, size_t n) const
@@ -99,34 +99,5 @@ namespace blazefeo
 
         if (n > 3)
             v_[0][3] = _mm256_fmadd_pd(a_v0, _mm256_broadcast_sd(b + 3), v_[0][3]);
-    }
-
-
-    template <>
-    template <>
-    BLAZE_ALWAYS_INLINE void RegisterMatrix<double, 1, 4, 4>::trsm<false, false, true>(double const * a, double * x) const
-    {
-        __m256d xx[4];
-        xx[0] = _mm256_load_pd(a + 0);
-        xx[0] /= v_[0][0][0];
-        _mm256_store_pd(x + 0, xx[0]);
-
-        xx[1] = _mm256_load_pd(a + 4);
-        xx[1] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][0][1], v_[0][0][1], v_[0][0][1], v_[0][0][1]), xx[0], xx[1]);
-        xx[1] /= v_[0][1][1];
-        _mm256_store_pd(x + 4, xx[1]);
-
-        xx[2] = _mm256_load_pd(a + 8);
-        xx[2] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][0][2], v_[0][0][2], v_[0][0][2], v_[0][0][2]), xx[0], xx[2]);
-        xx[2] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][1][2], v_[0][1][2], v_[0][1][2], v_[0][1][2]), xx[1], xx[2]);
-        xx[2] /= v_[0][2][2];
-        _mm256_store_pd(x + 8, xx[2]);
-
-        xx[3] = _mm256_load_pd(a + 12);
-        xx[3] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][0][3], v_[0][0][3], v_[0][0][3], v_[0][0][3]), xx[0], xx[3]);
-        xx[3] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][1][3], v_[0][1][3], v_[0][1][3], v_[0][1][3]), xx[1], xx[3]);
-        xx[3] = _mm256_fnmadd_pd(_mm256_set_pd(v_[0][2][3], v_[0][2][3], v_[0][2][3], v_[0][2][3]), xx[2], xx[3]);
-        xx[3] /= v_[0][3][3];
-        _mm256_store_pd(x + 12, xx[3]);
     }
 }

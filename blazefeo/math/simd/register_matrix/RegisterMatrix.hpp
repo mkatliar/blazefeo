@@ -38,6 +38,18 @@ namespace blazefeo
         }
 
 
+        T& at(size_t i, size_t j)
+        {
+            return v_[i / SS][j][i % SS];
+        }
+
+
+        T at(size_t i, size_t j) const
+        {
+            return v_[i / SS][j][i % SS];
+        }
+
+
         /// @brief load from memory
         void load(T beta, T const * ptr, size_t spacing);
 
@@ -70,7 +82,7 @@ namespace blazefeo
 
         /// @brief Triangular substitution
         template <bool LeftSide, bool Upper, bool TransA>
-        void trsm(T const * a, T * x) const;
+        void trsm(T const * l, size_t sl);
 
 
     private:
@@ -138,24 +150,42 @@ namespace blazefeo
 
     template <typename T, size_t M, size_t N, size_t SS>
     template <bool LeftSide, bool Upper, bool TransA>
-    void RegisterMatrix<T, M, N, SS>::trsm(T const * a, T * x) const
+    BLAZE_ALWAYS_INLINE void RegisterMatrix<T, M, N, SS>::trsm(T const * l, size_t sl)
     {
-        BLAZE_THROW_LOGIC_ERROR("Not implemented");
+        #pragma unroll
+        for (size_t j = 0; j < N; ++j)
+        {
+            #pragma unroll
+            for (size_t k = 0; k < j; ++k)
+            {
+                IntrinsicType const l_jk = broadcast<SS>(l + (j / SS) * sl + j % SS + k * SS);
+
+                #pragma unroll
+                for (size_t i = 0; i < M; ++i)
+                    v_[i][j] = fnmadd(l_jk, v_[i][k], v_[i][j]);
+            }
+
+            IntrinsicType const l_jj = broadcast<SS>(l + (j / SS) * sl + j % SS + j * SS);
+            
+            #pragma unroll
+            for (size_t i = 0; i < M; ++i)
+                v_[i][j] /= l_jj;
+        }
     }
 
 
     template <typename T, size_t M, size_t N, size_t SS>
     template <bool TA, bool TB>
-    void RegisterMatrix<T, M, N, SS>::ger(T alpha, T const * a, size_t sa, T const * b, size_t sb)
+    inline void RegisterMatrix<T, M, N, SS>::ger(T alpha, T const * a, size_t sa, T const * b, size_t sb)
     {
         BLAZE_THROW_LOGIC_ERROR("Not implemented");
     }
 
 
     template <bool LeftSide, bool Upper, bool TransA, typename T, size_t M, size_t N, size_t SS>
-    BLAZE_ALWAYS_INLINE void trsm(RegisterMatrix<T, M, N, SS>& ker, T const * a, T * x)
+    inline void trsm(RegisterMatrix<T, M, N, SS>& ker, T const * a, size_t sa)
     {
-        ker.template trsm<LeftSide, Upper, TransA>(a, x);
+        ker.template trsm<LeftSide, Upper, TransA>(a, sa);
     }
 
 

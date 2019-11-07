@@ -18,9 +18,3 @@ ylabel m;
 colorbar;
 title(sprintf('Gflops, avg=%.2f, min=%.2f, max=%.2f', ...
     mean(flops(:)) / factor, min(flops(:)) / factor, max(flops(:)) / factor));
-
-
-function benchmarks = filter_aggregate(benchmarks, name)
-    ind = strcmp({benchmarks.aggregate_name}, name);
-    benchmarks = benchmarks(ind);
-end

@@ -86,7 +86,14 @@ namespace blazefeo :: benchmark
     }
 
 
+    static void args_8_8(internal::Benchmark * b) 
+    {
+        args(b, 8, 8);
+    }
+
+
     BENCHMARK_TEMPLATE(BM_RegisterMatrix_partialStore, double, 1, 4, 4)->Apply(args_4_4);
     BENCHMARK_TEMPLATE(BM_RegisterMatrix_partialStore, double, 2, 4, 4)->Apply(args_8_4);
     BENCHMARK_TEMPLATE(BM_RegisterMatrix_partialStore, double, 3, 4, 4)->Apply(args_12_4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_partialStore, double, 2, 8, 4)->Apply(args_8_8);
 }

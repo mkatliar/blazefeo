@@ -10,6 +10,7 @@ add_executable(bench-blazefeo
     register_matrix/Store.cpp
     register_matrix/PartialStore.cpp
     register_matrix/Potrf.cpp
+    register_matrix/Trsm.cpp
 
     GemmStatic.cpp
     GemmDynamic.cpp

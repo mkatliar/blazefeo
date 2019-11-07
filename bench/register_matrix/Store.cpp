@@ -1,4 +1,4 @@
-#include <blazefeo/math/StaticPanelMatrix.hpp>
+#include <blazefeo/math/DynamicPanelMatrix.hpp>
 
 #include <bench/Benchmark.hpp>
 
@@ -7,17 +7,17 @@
 
 namespace blazefeo :: benchmark
 {
-    template <typename Kernel>
+    template <typename T, size_t M, size_t N, size_t SS>
     static void BM_RegisterMatrix_store(State& state)
     {
+        using Kernel = RegisterMatrix<T, M, N, SS>;
         using Traits = RegisterMatrixTraits<Kernel>;
-        size_t constexpr M = Traits::rows;
-        size_t constexpr N = Traits::columns;
-
-        StaticPanelMatrix<double, M, N, rowMajor> c, d;
-        randomize(c);
 
         Kernel ker;
+        
+        DynamicPanelMatrix<double, rowMajor> c(ker.rows(), ker.columns()), d(ker.rows(), ker.columns());
+        randomize(c);
+
         load(ker, c.tile(0, 0), c.spacing());
 
         for (auto _ : state)
@@ -26,11 +26,12 @@ namespace blazefeo :: benchmark
             DoNotOptimize(d);
         }
 
-        state.counters["flops"] = Counter(M * N, Counter::kIsIterationInvariantRate);
+        state.counters["flops"] = Counter(ker.rows() * ker.columns(), Counter::kIsIterationInvariantRate);
     }
 
 
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, RegisterMatrix<double, 1, 4, 4>);
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, RegisterMatrix<double, 2, 4, 4>);
-    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, RegisterMatrix<double, 3, 4, 4>);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, double, 1, 4, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, double, 2, 4, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, double, 3, 4, 4);
+    BENCHMARK_TEMPLATE(BM_RegisterMatrix_store, double, 2, 8, 4);
 }

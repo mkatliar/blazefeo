@@ -65,8 +65,6 @@ namespace blazefeo
 
         RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
 
-        size_t k = 0;
-
         if (TILE_SIZE <= M)
         {
             // Zero-out upper blocks
@@ -80,23 +78,10 @@ namespace blazefeo
                 trsm<false, false, true>(ker, tile(A, i, 0), tile(L, i, 0));
         }
 
-
-        if (TILE_SIZE * (++k + 1) <= M)
-            potrf_backend(k, A, L); // k = 1
-
-        if (TILE_SIZE * (++k + 1) <= M)
-            potrf_backend(k, A, L); // k = 2
-
-        if (TILE_SIZE * (++k + 1) <= M)
-            potrf_backend(k, A, L); // k = 3
-
-        if (TILE_SIZE * (++k + 1) <= M)
-            potrf_backend(k, A, L); // k = 4
-
-        if (TILE_SIZE * (++k + 1) <= M)
-            potrf_backend(k, A, L); // k = 5
-        
-        while (TILE_SIZE * (++k + 1) <= M) 
-            potrf_backend(k, A, L); // k = 6,7,...
+        // Unrolling this loop for statically-sized matrices 
+        // gives a performance boost up to 10% for matrix sizes below 50.
+        // #pragma unroll
+        for (size_t k = 1; k < M / TILE_SIZE; ++k) 
+            potrf_backend(k, A, L);
     }
 }
