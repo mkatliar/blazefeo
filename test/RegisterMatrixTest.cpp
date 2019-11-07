@@ -1,5 +1,6 @@
 #include <blazefeo/math/simd/RegisterMatrix.hpp>
 #include <blazefeo/math/StaticPanelMatrix.hpp>
+#include <blazefeo/math/views/submatrix/Panel.hpp>
 
 #include <test/Testing.hpp>
 #include <test/Randomize.hpp>
@@ -98,27 +99,44 @@ namespace blazefeo :: testing
     TYPED_TEST_P(RegisterMatrixTest, testPotrf)
     {
         using Traits = RegisterMatrixTraits<TypeParam>;
+        using ET = typename Traits::ElementType;
+        static size_t constexpr m = Traits::rows;
+        static size_t constexpr n = Traits::columns;
+        
         TypeParam ker;
 
-        if constexpr (Traits::rows == Traits::columns)
+        if constexpr (m >= n)
         {
-            StaticPanelMatrix<typename Traits::ElementType, Traits::rows, Traits::columns, rowMajor> A, L, A1;
-            makePositiveDefinite(A);
+            StaticPanelMatrix<ET, m, n, rowMajor> A, L;
+            StaticPanelMatrix<ET, m, m, rowMajor> A1;
+
+            {
+                blaze::StaticMatrix<ET, n, n, columnMajor> C0;
+                makePositiveDefinite(C0);
+
+                blaze::StaticMatrix<ET, m, n, columnMajor> C;
+                submatrix(C, 0, 0, n, n) = C0;
+                randomize(submatrix(C, n, 0, m - n, n));
+
+                A.pack(data(C), spacing(C));
+            }
 
             load(ker, A.tile(0, 0), A.spacing());
             ker.potrf();
             store(ker, L.tile(0, 0), L.spacing());
 
-            // std::cout << "L=\n" << L << std::endl;
-            
             A1 = 0.;
             gemm_nt(L, L, A1, A1);
 
-            BLAZEFEO_ASSERT_APPROX_EQ(A1, A, 1e-15, 1e-15);
+            // std::cout << "A=\n" << A << std::endl;
+            // std::cout << "L=\n" << L << std::endl;
+            // std::cout << "A1=\n" << A1 << std::endl;
+
+            BLAZEFEO_ASSERT_APPROX_EQ(submatrix(A1, 0, 0, m, n), A, 1e-15, 1e-15);
         }
         else
         {
-            std::clog << "RegisterMatrixTest.testPotrf not implemented for non-square kernels!" << std::endl;
+            std::clog << "RegisterMatrixTest.testPotrf not implemented for kernels with columns more than rows!" << std::endl;
         }        
     }
 
@@ -175,30 +193,4 @@ namespace blazefeo :: testing
     INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_4_4, RegisterMatrixTest, RegisterMatrix_double_2_4_4);
     INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_3_4_4, RegisterMatrixTest, RegisterMatrix_double_3_4_4);
     INSTANTIATE_TYPED_TEST_SUITE_P(RegisterMatrix_double_2_8_4, RegisterMatrixTest, RegisterMatrix_double_2_8_4);
-
-
-    TEST(RegisterMatrix_double_1_4_4_Test, testTrsmRLT)
-    {
-        RegisterMatrix<double, 1, 4, 4> ker;
-
-        StaticPanelMatrix<double, 4, 4, rowMajor> L {
-            {2,            0,            0,            0},
-            {3,            4,            0,            0},
-            {5,            6,            7,            0},
-            {8,            9,           10,           11},
-        };
-
-        StaticPanelMatrix<double, 4, 4, rowMajor> A {
-            {1,   0,   0,   0},
-            {0,   1,   0,   0},
-            {0,   0,   1,   0},
-            {0,   0,   0,   1},
-        };
-
-        load(ker, A.tile(0, 0), A.spacing());
-        trsm<false, false, true>(ker, tile(L, 0, 0), spacing(L));
-        store(ker, A.tile(0, 0), A.spacing());
-
-        std::cout << A << std::endl;
-    }
 }

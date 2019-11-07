@@ -87,13 +87,6 @@ namespace blazefeo
 
 
     template <>
-    inline void RegisterMatrix<double, 3, 4, 4>::potrf()
-    {
-        BLAZE_THROW_LOGIC_ERROR("Not implemented");
-    }
-
-
-    template <>
     template <>
     inline void RegisterMatrix<double, 3, 4, 4>::ger<false, true>(
         double alpha, double const * a, size_t sa, double const * b, size_t sb)

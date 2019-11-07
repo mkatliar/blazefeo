@@ -192,15 +192,11 @@ namespace blazefeo
     template <typename T, size_t M, size_t N, size_t SS>
     BLAZE_ALWAYS_INLINE void RegisterMatrix<T, M, N, SS>::potrf()
     {
-        static_assert(M * SS == N, "potrf() not implemented for non-square register matrices");
+        static_assert(M * SS >= N, "potrf() not implemented for register matrices with columns more than rows");
         
         #pragma unroll
-        for (size_t k = 0; k < M * SS; ++k)
+        for (size_t k = 0; k < N; ++k)
         {
-            #pragma unroll
-            for (size_t i = 0; i < k / SS; ++i)
-                v_[i][k] = setzero<T, SS>();
-            
             #pragma unroll
             for (size_t j = 0; j < k; ++j)
             {
@@ -211,10 +207,16 @@ namespace blazefeo
                     v_[i][k] = fnmadd(set(a_kj, a_kj, a_kj, a_kj), v_[i][j], v_[i][k]);
             }
 
-            T const inv_sqrt_a_kk = T(1.) / std::sqrt(v_[k / SS][k][k % SS]);
+            T const sqrt_a_kk = std::sqrt(v_[k / SS][k][k % SS]);
+            
             #pragma unroll
-            for (size_t i = 0; i < M; ++i) if (i >= k / SS)
-                v_[i][k] *= inv_sqrt_a_kk;
+            for (size_t i = 0; i < M; ++i) 
+            {
+                if (i < k / SS)
+                    v_[i][k] = setzero<T, SS>();
+                else
+                    v_[i][k] /= sqrt_a_kk;
+            }
         }     
     }
 
