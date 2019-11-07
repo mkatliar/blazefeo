@@ -171,7 +171,7 @@ namespace blazefeo :: testing
 
         // std::cout << B1 << std::endl;
 
-        BLAZEFEO_ASSERT_APPROX_EQ(B1, B, 1e-13, 1e-13);
+        BLAZEFEO_ASSERT_APPROX_EQ(B1, B, 1e-12, 1e-12);
     }
 
 

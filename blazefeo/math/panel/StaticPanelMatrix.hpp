@@ -12,7 +12,6 @@
 #include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/traits/SubmatrixTrait.h>
 
-#include <array>
 #include <initializer_list>
 
 
@@ -50,13 +49,13 @@ namespace blazefeo
         {
             // Initialize padding elements to 0 to prevent denorms in calculations.
             // Denorms can significantly impair performance, see https://github.com/giaf/blasfeo/issues/103
-            v_.fill(Type {});
+            std::fill_n(v_, capacity_, Type {});
         }
 
 
         constexpr StaticPanelMatrix(std::initializer_list<std::initializer_list<Type>> list)
         {
-            v_.fill(Type {});
+            std::fill_n(v_, capacity_, Type {});
             
             if (list.size() != M || determineColumns(list) > N)
                 BLAZE_THROW_INVALID_ARGUMENT("Invalid setup of static panel matrix");
@@ -153,13 +152,13 @@ namespace blazefeo
 
         Type * tile(size_t i, size_t j)
         {
-            return v_.data() + (i * tileColumns_ + j) * elementsPerTile_;
+            return v_ + (i * tileColumns_ + j) * elementsPerTile_;
         }
 
 
         Type const * tile(size_t i, size_t j) const
         {
-            return v_.data() + (i * tileColumns_ + j) * elementsPerTile_;
+            return v_ + (i * tileColumns_ + j) * elementsPerTile_;
         }
 
 
@@ -168,12 +167,13 @@ namespace blazefeo
         static size_t constexpr elementsPerTile_ = tileSize_ * tileSize_;
         static size_t constexpr tileRows_ = M / tileSize_ + (M % tileSize_ > 0);
         static size_t constexpr tileColumns_ = N / tileSize_ + (N % tileSize_ > 0);
+        static size_t constexpr capacity_ = tileRows_ * tileColumns_ * elementsPerTile_;
 
         // Alignment of the data elements.
         static size_t constexpr alignment_ = CACHE_LINE_SIZE;
 
         // Aligned element storage.
-        alignas(alignment_) std::array<Type, tileRows_ * tileColumns_ * elementsPerTile_> v_;
+        alignas(alignment_) Type v_[capacity_];
 
 
         size_t elementIndex(size_t i, size_t j) const

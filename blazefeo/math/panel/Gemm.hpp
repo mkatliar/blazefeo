@@ -67,15 +67,16 @@ namespace blazefeo
     }
 
 
+    /// Returns the index of first unprocessed row.
     template <size_t KM, size_t KN, typename ST1, typename ST2, typename MT1, typename MT2, typename MT3, typename MT4>
     void gemm_nt_backend(
-        ST1 alpha, ST2 beta,
+        size_t i, ST1 alpha, ST2 beta,
         PanelMatrix<MT1, rowMajor> const& A, PanelMatrix<MT2, rowMajor> const& B, 
         PanelMatrix<MT3, rowMajor> const& C, PanelMatrix<MT4, rowMajor>& D);
 
 
     template <typename ST1, typename ST2, typename MT1, typename MT2, typename MT3, typename MT4>
-    inline void gemm_nt(
+    BLAZE_ALWAYS_INLINE void gemm_nt(
         ST1 alpha, ST2 beta,
         PanelMatrix<MT1, rowMajor> const& A, PanelMatrix<MT2, rowMajor> const& B, 
         PanelMatrix<MT3, rowMajor> const& C, PanelMatrix<MT4, rowMajor>& D)
@@ -100,30 +101,43 @@ namespace blazefeo
         if (rows(D) != M || columns(D) != N)
             BLAZE_THROW_INVALID_ARGUMENT("Matrix sizes do not match");
 
-        // The algoritm of kernel selection is defined below and probably can be improved.
-        size_t constexpr KN = 4;
+        size_t i = 0;
 
-        if (M == 16)
+        // i + 4 * TILE_SIZE != M is to improve performance in case when the remaining number of rows is 4 * TILE_SIZE:
+        // it is more efficient to apply 2 * TILE_SIZE kernel 2 times than 3 * TILE_SIZE + 1 * TILE_SIZE kernel.
+        for (; i + 3 * TILE_SIZE <= M && i + 4 * TILE_SIZE != M; i += 3 * TILE_SIZE)
+            gemm_nt_backend<3 * TILE_SIZE, TILE_SIZE>(i, alpha, beta, ~A, ~B, ~C, ~D);
+
+        for (; i + 2 * TILE_SIZE <= M; i += 2 * TILE_SIZE)
+            gemm_nt_backend<2 * TILE_SIZE, TILE_SIZE>(i, alpha, beta, ~A, ~B, ~C, ~D);
+
+        for (; i + 1 * TILE_SIZE <= M; i += 1 * TILE_SIZE)
+            gemm_nt_backend<1 * TILE_SIZE, TILE_SIZE>(i, alpha, beta, ~A, ~B, ~C, ~D);
+
+        if (i < M)
         {
-            // This branch is to improve performance in case when the remaining number of rows is 16:
-            // it is more efficient to apply an 8x-kernel 2 times than a 12x-kernel + a 4x-kernel.            
-            gemm_nt_backend<8, KN>(alpha, beta, ~A, ~B, ~C, ~D);
-        }
-        else if (M >= 12)
-            gemm_nt_backend<12, KN>(alpha, beta, ~A, ~B, ~C, ~D);
-        else if (M >= 8)
-            gemm_nt_backend<8, KN>(alpha, beta, ~A, ~B, ~C, ~D);
-        else
-        {
-            // The smallest kernel that will take care of everything else
-            gemm_nt_backend<4, KN>(alpha, beta, ~A, ~B, ~C, ~D);
+            // Use a small kernel with partial save to calculate the bottom of the resulting matrix.
+            RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
+
+            size_t j = 0;
+            ET const * b = tile(B, 0, 0);
+
+            for (; j + TILE_SIZE <= N; j += TILE_SIZE)
+                gemm_backend<false, true>(ker, K, alpha, beta,
+                    ptr(A, i, 0), spacing(A), ptr(B, j, 0), spacing(B),
+                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), M - i, TILE_SIZE);
+
+            if (j < N)
+                gemm_backend<false, true>(ker, K, alpha, beta,
+                    ptr(A, i, 0), spacing(A), ptr(B, j, 0), spacing(B),
+                    ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), M - i, N - j);
         }
     }
 
 
     template <size_t KM, size_t KN, typename ST1, typename ST2, typename MT1, typename MT2, typename MT3, typename MT4>
     BLAZE_ALWAYS_INLINE void gemm_nt_backend(
-        ST1 alpha, ST2 beta,
+        size_t i, ST1 alpha, ST2 beta,
         PanelMatrix<MT1, rowMajor> const& A, PanelMatrix<MT2, rowMajor> const& B, 
         PanelMatrix<MT3, rowMajor> const& C, PanelMatrix<MT4, rowMajor>& D)
     {
@@ -144,52 +158,20 @@ namespace blazefeo
         BLAZE_USER_ASSERT(rows(C) == M && columns(C) == N, "Matrix sizes do not match");
         BLAZE_USER_ASSERT(rows(D) == M && columns(D) == N, "Matrix sizes do not match");
 
-        if (M < TILE_SIZE)
-        {
-            // Use a small kernel with partial save to calculate the bottom of the resulting matrix.
-            RegisterMatrix<ET, 1, TILE_SIZE, TILE_SIZE> ker;
+        ET const * a = ptr(A, i, 0);
 
-            size_t const rm = M;
-            size_t j = 0;
-            ET const * b = tile(B, 0, 0);
+        // TODO: this loop can be eliminated and it's function transferred to the outer loop!
+        RegisterMatrix<ET, KM / TILE_SIZE, KN, TILE_SIZE> ker;
+        size_t j = 0;
 
-            for (; j + TILE_SIZE <= N; j += TILE_SIZE)
-                gemm_backend<false, true>(ker, K, alpha, beta,
-                    ptr(A, 0, 0), spacing(A), ptr(B, j, 0), spacing(B),
-                    ptr(C, 0, j), spacing(C), ptr(D, 0, j), spacing(D), rm, TILE_SIZE);
+        for (; j + KN <= N; j += KN)
+            gemm_backend<false, true>(ker, K, alpha, beta,
+                a, spacing(A), ptr(B, j, 0), spacing(B),
+                ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D));
 
-            if (j < N)
-                gemm_backend<false, true>(ker, K, alpha, beta,
-                    ptr(A, 0, 0), spacing(A), ptr(B, j, 0), spacing(B),
-                    ptr(C, 0, j), spacing(C), ptr(D, 0, j), spacing(D), rm, N - j);
-        }
-        else
-        {
-            size_t i = 0;
-            ET const * a = tile(A, 0, 0);
-
-            for (; i + KM <= M; i += KM, a += KM / TILE_SIZE * spacing(A))
-            {
-                RegisterMatrix<ET, KM / TILE_SIZE, KN, TILE_SIZE> ker;
-                size_t j = 0;
-
-                for (; j + KN <= N; j += KN)
-                    gemm_backend<false, true>(ker, K, alpha, beta,
-                        a, spacing(A), ptr(B, j, 0), spacing(B),
-                        ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D));
-
-                if (j < N)
-                    gemm_backend<false, true>(ker, K, alpha, beta,
-                        a, spacing(A), ptr(B, j, 0), spacing(B),
-                        ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), KM, N - j);
-            }
-
-            // Calculate the rest with a smaller kernel.
-            if (i < M)
-            {
-                auto D1 = submatrix(~D, i, 0, M - i, N);
-                gemm_nt(alpha, beta, submatrix(~A, i, 0, M - i, K), ~B, submatrix(~C, i, 0, M - i, N), ~D1);
-            }
-        }
+        if (j < N)
+            gemm_backend<false, true>(ker, K, alpha, beta,
+                a, spacing(A), ptr(B, j, 0), spacing(B),
+                ptr(C, i, j), spacing(C), ptr(D, i, j), spacing(D), KM, N - j);
     }
 }
