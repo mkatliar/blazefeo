@@ -16,54 +16,29 @@ namespace blazefeo
     using namespace blaze;
 
 
-    template <size_t BLOCK_SIZE, typename MT1, typename MT2>
-    BLAZE_ALWAYS_INLINE void potrf_backend(
+    template <size_t KM, size_t KN, typename MT1, typename MT2>
+    BLAZE_ALWAYS_INLINE void potrf_backend(size_t k, size_t i,
         PanelMatrix<MT1, rowMajor> const& A, PanelMatrix<MT2, rowMajor>& L)
     {
         using ET = ElementType_t<MT1>;
         size_t constexpr TILE_SIZE = TileSize_v<ET>;
-        size_t constexpr TILES_PER_BLOCK = BLOCK_SIZE / TILE_SIZE;
-            
+        
         size_t const M = rows(A);
+        size_t const N = columns(A);
 
-        // Unrolling this loop for statically-sized matrices 
-        // gives a performance boost up to 10% for matrix sizes below 50.
-        // #pragma unroll
-        for (size_t k = 0; k * TILE_SIZE + BLOCK_SIZE <= M; k += TILES_PER_BLOCK) 
-        {
-            size_t const K = k * TILE_SIZE;
+        RegisterMatrix<ET, KM / TILE_SIZE, KN, TILE_SIZE> ker;
 
-            // TODO: improve performance here by using symmetric rank-1 update for the first row of blocks.
-            auto L1 = submatrix(~L, K, K, M - K, BLOCK_SIZE, unchecked);
-            gemm_nt(ET(-1.), ET(1.),
-                submatrix(~L, K, 0, M - K, K, unchecked),
-                submatrix(~L, K, 0, BLOCK_SIZE, K, unchecked),
-                submatrix(~A, K, K, M - K, BLOCK_SIZE, unchecked),
-                L1);
+        load(ker, ptr(A, i, k), spacing(A));
 
-            RegisterMatrix<ET, TILES_PER_BLOCK, BLOCK_SIZE, TILE_SIZE> ker;
-            load(ker, tile(L, k, k), spacing(L));
+        for (size_t l = 0; l < k; ++l)
+            ger<false, true>(ker, ET(-1.), ptr(L, i, l), spacing(L), ptr(L, k, l), spacing(L));
+
+        if (i == k)
             ker.potrf();
-            store(ker, tile(L, k, k), spacing(L));
+        else
+            trsm<false, false, true>(ker, ptr(L, k, k), spacing(L));
 
-            // TODO: replace by a call to matrix trsm when it is implemented
-            for (size_t i = k + TILES_PER_BLOCK; i * TILE_SIZE + BLOCK_SIZE <= M; i += TILES_PER_BLOCK)
-            {
-                load(ker, tile(L, i, k), spacing(L));
-                trsm<false, false, true>(ker, tile(L, k, k), spacing(L));
-                store(ker, tile(L, i, k), spacing(L));
-            }
-
-            size_t const rem = M % BLOCK_SIZE;
-            if (rem)
-            {
-                // Process the remainder of the column block
-                size_t const i = (M / BLOCK_SIZE) * TILES_PER_BLOCK;
-                load(ker, tile(L, i, k), spacing(L));
-                trsm<false, false, true>(ker, tile(L, k, k), spacing(L));
-                store(ker, tile(L, i, k), spacing(L), rem, BLOCK_SIZE);
-            }
-        }
+        store(ker, ptr(L, i, k), spacing(L));
     }
 
 
@@ -77,16 +52,32 @@ namespace blazefeo
         BLAZE_CONSTRAINT_MUST_BE_SAME_TYPE(ElementType_t<MT2>, ET);
 
         size_t const M = rows(A);
+        size_t const N = columns(A);
 
-        if (columns(A) != M)
+        if (columns(A) > M)
             BLAZE_THROW_INVALID_ARGUMENT("Invalid matrix size");
 
         if (rows(L) != M)
             BLAZE_THROW_INVALID_ARGUMENT("Invalid matrix size");
 
-        if (columns(L) != M)
+        if (columns(L) != N)
             BLAZE_THROW_INVALID_ARGUMENT("Invalid matrix size");
 
-        potrf_backend<2 * TILE_SIZE>(A, L);
+        size_t constexpr KN = TILE_SIZE;
+        size_t k = 0;
+
+        for (; k < N; k += KN)
+        {
+            size_t i = k;
+
+            // for (; i + 2 * TILE_SIZE < M; i += 3 * TILE_SIZE)
+            //     potrf_backend<3 * TILE_SIZE, KN>(k, i, ~A, ~L);
+
+            // for (; i + 1 * TILE_SIZE < M; i += 2 * TILE_SIZE)
+            //     potrf_backend<2 * TILE_SIZE, KN>(k, i, ~A, ~L);
+
+            for (; i + 0 * TILE_SIZE < M; i += 1 * TILE_SIZE)
+                potrf_backend<1 * TILE_SIZE, KN>(k, i, ~A, ~L);
+        }
     }
 }
