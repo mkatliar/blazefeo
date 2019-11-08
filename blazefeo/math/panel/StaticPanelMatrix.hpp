@@ -162,6 +162,20 @@ namespace blazefeo
         }
 
 
+        Type * ptr(size_t i, size_t j)
+        {
+            BLAZE_USER_ASSERT(i % tileSize_ == 0, "Row index not aligned to tile boundary");
+            return v_ + tileColumns_ * tileSize_ * i + tileSize_ * j;
+        }
+
+
+        Type const * ptr(size_t i, size_t j) const
+        {
+            BLAZE_USER_ASSERT(i % tileSize_ == 0, "Row index not aligned to tile boundary");
+            return v_ + tileColumns_ * tileSize_ * i + tileSize_ * j;
+        }
+
+
     private:
         static size_t constexpr tileSize_ = TileSize_v<Type>;
         static size_t constexpr elementsPerTile_ = tileSize_ * tileSize_;

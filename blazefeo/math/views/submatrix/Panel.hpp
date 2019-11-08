@@ -227,6 +227,18 @@ namespace blazefeo
         {
             return data_ + spacing() * i + tileSize_ * tileSize_ * j;
         }
+
+
+        Pointer ptr(size_t i, size_t j)
+        {
+            return matrix_.ptr(i + row(), j + column());
+        }
+
+
+        ConstPointer ptr(size_t i, size_t j) const
+        {
+            return matrix_.ptr(i + row(), j + column());
+        }
         
 
     private:

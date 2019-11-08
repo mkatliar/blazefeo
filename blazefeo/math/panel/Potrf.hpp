@@ -30,8 +30,11 @@ namespace blazefeo
 
         load(ker, ptr(A, i, k), spacing(A));
 
+        ET const * a = ptr(L, i, 0);
+        ET const * b = ptr(L, k, 0);
+
         for (size_t l = 0; l < k; ++l)
-            ger<false, true>(ker, ET(-1.), ptr(L, i, l), spacing(L), ptr(L, k, l), spacing(L));
+            ger<false, true>(ker, ET(-1.), a + TILE_SIZE * l, spacing(L), b + TILE_SIZE * l, spacing(L));
 
         if (i == k)
             ker.potrf();
@@ -66,15 +69,18 @@ namespace blazefeo
         size_t constexpr KN = TILE_SIZE;
         size_t k = 0;
 
+        // This loop unroll gives some performance benefit for N >= 18,
+        // but not much (about 1%).
+        // #pragma unroll
         for (; k < N; k += KN)
         {
             size_t i = k;
 
-            // for (; i + 2 * TILE_SIZE < M; i += 3 * TILE_SIZE)
-            //     potrf_backend<3 * TILE_SIZE, KN>(k, i, ~A, ~L);
+            for (; i + 2 * TILE_SIZE < M; i += 3 * TILE_SIZE)
+                potrf_backend<3 * TILE_SIZE, KN>(k, i, ~A, ~L);
 
-            // for (; i + 1 * TILE_SIZE < M; i += 2 * TILE_SIZE)
-            //     potrf_backend<2 * TILE_SIZE, KN>(k, i, ~A, ~L);
+            for (; i + 1 * TILE_SIZE < M; i += 2 * TILE_SIZE)
+                potrf_backend<2 * TILE_SIZE, KN>(k, i, ~A, ~L);
 
             for (; i + 0 * TILE_SIZE < M; i += 1 * TILE_SIZE)
                 potrf_backend<1 * TILE_SIZE, KN>(k, i, ~A, ~L);
