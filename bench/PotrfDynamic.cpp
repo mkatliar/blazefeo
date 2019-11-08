@@ -2,6 +2,8 @@
 #include <blazefeo/math/panel/Potrf.hpp>
 
 #include <bench/Benchmark.hpp>
+#include <bench/Complexity.hpp>
+
 #include <test/Randomize.hpp>
 
 #include <random>
@@ -25,10 +27,10 @@ namespace blazefeo :: benchmark
             DoNotOptimize(L);
         }
 
-        state.counters["flops"] = Counter(M * M * M / 3., Counter::kIsIterationInvariantRate);
+        setCounters(state.counters, complexityPotrf(M, M));
         state.counters["m"] = M;
     }
 
 
-    BENCHMARK_TEMPLATE(BM_potrf_dynamic, double)->DenseRange(4, 300, 4);
+    BENCHMARK_TEMPLATE(BM_potrf_dynamic, double)->DenseRange(1, 300);
 }

@@ -9,7 +9,7 @@ namespace blazefeo :: testing
 {
     TEST(PotrfTest, testDynamicSize)
     {
-        for (size_t M : {4, 8, 12, 16})
+        for (size_t M = 0; M <= 50; ++M)
         {
             // Init matrices
             //

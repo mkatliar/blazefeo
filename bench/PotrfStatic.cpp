@@ -2,6 +2,8 @@
 #include <blazefeo/math/panel/Potrf.hpp>
 
 #include <bench/Benchmark.hpp>
+#include <bench/Complexity.hpp>
+
 #include <test/Randomize.hpp>
 
 #include <random>
@@ -10,6 +12,18 @@
 
 #define BENCHMARK_POTRF_STATIC(type, size) \
     BENCHMARK_TEMPLATE(BM_potrf_static, type, size);
+
+#define BENCHMARK_POTRF_STATIC_10(type, size) \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 0); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 1); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 2); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 3); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 4); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 5); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 6); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 7); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 8); \
+    BENCHMARK_TEMPLATE(BM_potrf_static, type, size + 9); \
 
 
 namespace blazefeo :: benchmark
@@ -27,74 +41,39 @@ namespace blazefeo :: benchmark
             DoNotOptimize(L);
         }
 
-        state.counters["flops"] = Counter(M * M * M / 3., Counter::kIsIterationInvariantRate);
+        setCounters(state.counters, complexityPotrf(M, M));
         state.counters["m"] = M;
     }
 
 
-    // BENCHMARK_POTRF_STATIC(double, 1);
-    // BENCHMARK_POTRF_STATIC(double, 2);
-    // BENCHMARK_POTRF_STATIC(double, 3);
-    BENCHMARK_POTRF_STATIC(double, 4);
-    // BENCHMARK_POTRF_STATIC(double, 5);
-    // BENCHMARK_POTRF_STATIC(double, 6);
-    // BENCHMARK_POTRF_STATIC(double, 7);
-    BENCHMARK_POTRF_STATIC(double, 8);
-    // BENCHMARK_POTRF_STATIC(double, 9);
-    // BENCHMARK_POTRF_STATIC(double, 10);
-    // BENCHMARK_POTRF_STATIC(double, 11);
-    BENCHMARK_POTRF_STATIC(double, 12);
-    // BENCHMARK_POTRF_STATIC(double, 13);
-    // BENCHMARK_POTRF_STATIC(double, 14);
-    // BENCHMARK_POTRF_STATIC(double, 15);
-    BENCHMARK_POTRF_STATIC(double, 16);
-    // BENCHMARK_POTRF_STATIC(double, 17);
-    // BENCHMARK_POTRF_STATIC(double, 18);
-    // BENCHMARK_POTRF_STATIC(double, 19);
-    BENCHMARK_POTRF_STATIC(double, 20);
-    // BENCHMARK_POTRF_STATIC(double, 21);
-    // BENCHMARK_POTRF_STATIC(double, 22);
-    // BENCHMARK_POTRF_STATIC(double, 23);
-    BENCHMARK_POTRF_STATIC(double, 24);
-    // BENCHMARK_POTRF_STATIC(double, 25);
-    // BENCHMARK_POTRF_STATIC(double, 26);
-    // BENCHMARK_POTRF_STATIC(double, 27);
-    BENCHMARK_POTRF_STATIC(double, 28);
-    // BENCHMARK_POTRF_STATIC(double, 29);
-    // BENCHMARK_POTRF_STATIC(double, 30);
-    // BENCHMARK_POTRF_STATIC(double, 31);
-    BENCHMARK_POTRF_STATIC(double, 32);
-    // BENCHMARK_POTRF_STATIC(double, 33);
-    // BENCHMARK_POTRF_STATIC(double, 34);
-    // BENCHMARK_POTRF_STATIC(double, 35);
-    BENCHMARK_POTRF_STATIC(double, 36);
-    // BENCHMARK_POTRF_STATIC(double, 37);
-    // BENCHMARK_POTRF_STATIC(double, 38);
-    // BENCHMARK_POTRF_STATIC(double, 39);
-    BENCHMARK_POTRF_STATIC(double, 40);
-    // BENCHMARK_POTRF_STATIC(double, 41);
-    // BENCHMARK_POTRF_STATIC(double, 42);
-    // BENCHMARK_POTRF_STATIC(double, 43);
-    BENCHMARK_POTRF_STATIC(double, 44);
-    // BENCHMARK_POTRF_STATIC(double, 45);
-    // BENCHMARK_POTRF_STATIC(double, 46);
-    // BENCHMARK_POTRF_STATIC(double, 47);
-    BENCHMARK_POTRF_STATIC(double, 48);
-    // BENCHMARK_POTRF_STATIC(double, 49);
-    // BENCHMARK_POTRF_STATIC(double, 50);
-    BENCHMARK_POTRF_STATIC(double, 52);
-    BENCHMARK_POTRF_STATIC(double, 64);
-    BENCHMARK_POTRF_STATIC(double, 72);
-    BENCHMARK_POTRF_STATIC(double, 80);
-    BENCHMARK_POTRF_STATIC(double, 88);
-    BENCHMARK_POTRF_STATIC(double, 96);
-    BENCHMARK_POTRF_STATIC(double, 104);
-    BENCHMARK_POTRF_STATIC(double, 112);
-    BENCHMARK_POTRF_STATIC(double, 120);
-    BENCHMARK_POTRF_STATIC(double, 128);
-    BENCHMARK_POTRF_STATIC(double, 160);
-    BENCHMARK_POTRF_STATIC(double, 192);
-    BENCHMARK_POTRF_STATIC(double, 224);
-    BENCHMARK_POTRF_STATIC(double, 256);
-    BENCHMARK_POTRF_STATIC(double, 300);
+    BENCHMARK_POTRF_STATIC_10(double, 1);
+    BENCHMARK_POTRF_STATIC_10(double, 11);
+    BENCHMARK_POTRF_STATIC_10(double, 21);
+    BENCHMARK_POTRF_STATIC_10(double, 31);
+    BENCHMARK_POTRF_STATIC_10(double, 41);
+    BENCHMARK_POTRF_STATIC_10(double, 51);
+    BENCHMARK_POTRF_STATIC_10(double, 61);
+    BENCHMARK_POTRF_STATIC_10(double, 71);
+    BENCHMARK_POTRF_STATIC_10(double, 81);
+    BENCHMARK_POTRF_STATIC_10(double, 91);
+    BENCHMARK_POTRF_STATIC_10(double, 101);
+    BENCHMARK_POTRF_STATIC_10(double, 111);
+    BENCHMARK_POTRF_STATIC_10(double, 121);
+    BENCHMARK_POTRF_STATIC_10(double, 131);
+    BENCHMARK_POTRF_STATIC_10(double, 141);
+    BENCHMARK_POTRF_STATIC_10(double, 151);
+    BENCHMARK_POTRF_STATIC_10(double, 161);
+    BENCHMARK_POTRF_STATIC_10(double, 171);
+    BENCHMARK_POTRF_STATIC_10(double, 181);
+    BENCHMARK_POTRF_STATIC_10(double, 191);
+    BENCHMARK_POTRF_STATIC_10(double, 201);
+    BENCHMARK_POTRF_STATIC_10(double, 211);
+    BENCHMARK_POTRF_STATIC_10(double, 221);
+    BENCHMARK_POTRF_STATIC_10(double, 231);
+    BENCHMARK_POTRF_STATIC_10(double, 241);
+    BENCHMARK_POTRF_STATIC_10(double, 251);
+    BENCHMARK_POTRF_STATIC_10(double, 261);
+    BENCHMARK_POTRF_STATIC_10(double, 271);
+    BENCHMARK_POTRF_STATIC_10(double, 281);
+    BENCHMARK_POTRF_STATIC_10(double, 291);
 }

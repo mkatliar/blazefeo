@@ -26,6 +26,9 @@ namespace blazefeo
         size_t const M = rows(A);
         size_t const N = columns(A);
 
+        BLAZE_USER_ASSERT(i < M, "Index too big");
+        BLAZE_USER_ASSERT(k < N, "Index too big");
+
         RegisterMatrix<ET, KM / TILE_SIZE, KN, TILE_SIZE> ker;
 
         load(ker, ptr(A, i, k), spacing(A));
@@ -41,7 +44,10 @@ namespace blazefeo
         else
             trsm<false, false, true>(ker, ptr(L, k, k), spacing(L));
 
-        store(ker, ptr(L, i, k), spacing(L));
+        if (k + KN <= N)
+            store(ker, ptr(L, i, k), spacing(L));
+        else
+            store(ker, ptr(L, i, k), spacing(L), std::min(M - i, KM), N - k);
     }
 
 
