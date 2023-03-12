@@ -20,8 +20,10 @@ add_executable(test-blazefeo
     math/dense/GemmTest.cpp
     math/dense/SyrkTest.cpp
     math/dense/PotrfTest.cpp
+    math/dense/GetrfTest.cpp
     math/dense/TrmmTest.cpp
     math/dense/TrsvTest.cpp
+    math/dense/TrsmTest.cpp
 
     math/panel/StaticPanelMatrixTest.cpp
     math/panel/DynamicPanelMatrixTest.cpp
@@ -46,7 +48,7 @@ target_link_libraries(test-blazefeo PRIVATE
     ${CMAKE_THREAD_LIBS_INIT}    # Needed for gtest
 )
 
-target_compile_definitions(test-blazefeo 
+target_compile_definitions(test-blazefeo
     PRIVATE "BLAZE_USER_ASSERTION=1;BLAZE_INTERNAL_ASSERTION=1"
 )
 
