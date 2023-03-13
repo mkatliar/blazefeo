@@ -4,8 +4,7 @@
 
 #include <blazefeo/math/simd/RegisterMatrix.hpp>
 #include <blazefeo/math/StaticPanelMatrix.hpp>
-#include <blazefeo/math/dense/DynamicMatrixPointer.hpp>
-#include <blazefeo/math/dense/StaticMatrixPointer.hpp>
+#include <blazefeo/math/dense/MatrixPointer.hpp>
 #include <blazefeo/math/views/submatrix/Panel.hpp>
 
 #include <test/Testing.hpp>
@@ -32,11 +31,11 @@ namespace blazefeo :: testing
         DynamicRegisterMatrix<float, 16, 4, columnMajor>,
         DynamicRegisterMatrix<float, 24, 4, columnMajor>
     >;
-        
-        
+
+
     TYPED_TEST_SUITE(DynamicRegisterMatrixTest, MyTypes);
 
-    
+
     TYPED_TEST(DynamicRegisterMatrixTest, testDefaultCtor)
     {
         using RM = TypeParam;
@@ -48,7 +47,7 @@ namespace blazefeo :: testing
                 RM ker(m, n);
                 ASSERT_EQ(ker.rows(), m);
                 ASSERT_EQ(ker.columns(), n);
-                
+
                 for (size_t i = 0; i < m; ++i)
                     for (size_t j = 0; j < n; ++j)
                         ASSERT_EQ(ker(i, j), ET(0.));
@@ -69,7 +68,7 @@ namespace blazefeo :: testing
                 randomize(A);
 
                 RM ker(m, n);
-                ker.load(ptr(A, 0, 0));
+                ker.load(ptr<aligned>(A, 0, 0));
 
                 for (size_t i = 0; i < ker.rows(); ++i)
                     for (size_t j = 0; j < ker.columns(); ++j)
@@ -95,7 +94,7 @@ namespace blazefeo :: testing
                 randomize(A);
 
                 RM ker(m, n);
-                ker.load(ptr(A, 0, 0));
+                ker.load(ptr<aligned>(A, 0, 0));
 
                 EXPECT_EQ(ker, A);
             }
@@ -114,8 +113,8 @@ namespace blazefeo :: testing
                 randomize(A);
 
                 RM ker(m, n);
-                ker.load(ptr(A, 0, 0));
-                ker.store(ptr(B, 0, 0));
+                ker.load(ptr<aligned>(A, 0, 0));
+                ker.store(ptr<aligned>(B, 0, 0));
 
                 EXPECT_EQ(B, A);
             }
@@ -137,15 +136,15 @@ namespace blazefeo :: testing
                 randomize(A);
                 randomize(B);
                 randomize(C);
-                
+
                 ET alpha {};
                 blaze::randomize(alpha);
 
                 TypeParam ker(m, n);
-                ker.load(ptr(C, 0, 0));
-                ker.ger(alpha, ptr(A, 0, 0), ptr(B, 0, 0));
+                ker.load(ptr<aligned>(C, 0, 0));
+                ker.ger(alpha, ptr<aligned>(A, 0, 0), ptr<aligned>(B, 0, 0));
 
-                BLAZEFEO_EXPECT_APPROX_EQ(ker, 
+                BLAZEFEO_EXPECT_APPROX_EQ(ker,
                     evaluate(C + alpha * A * B), absTol<ET>(), relTol<ET>());
             }
     }
@@ -166,15 +165,15 @@ namespace blazefeo :: testing
                 randomize(A);
                 randomize(B);
                 randomize(C);
-                
+
                 ET alpha {};
                 blaze::randomize(alpha);
 
                 TypeParam ker(m, n);
-                ker.load(ptr(C, 0, 0));
-                ker.ger(alpha, ptr(A, 0, 0), ptr(B, 0, 0));
+                ker.load(ptr(C));
+                ker.ger(alpha, ~ptr(A), ~ptr(B));
 
-                BLAZEFEO_EXPECT_APPROX_EQ(ker, 
+                BLAZEFEO_EXPECT_APPROX_EQ(ker,
                     evaluate(C + alpha * A * B), absTol<ET>(), relTol<ET>());
             }
     }
@@ -186,7 +185,7 @@ namespace blazefeo :: testing
     //     using ET = typename Traits::ElementType;
     //     static size_t constexpr m = Traits::rows;
     //     static size_t constexpr n = Traits::columns;
-        
+
     //     if constexpr (m >= n)
     //     {
     //         StaticPanelMatrix<ET, m, n, columnMajor> A, L;
@@ -205,9 +204,9 @@ namespace blazefeo :: testing
 
     //         {
     //             TypeParam ker;
-    //             load(ker, A.ptr(0, 0), A.spacing());
+    //             load(ker, A.ptr<aligned>(0, 0), A.spacing());
     //             ker.potrf();
-    //             store(ker, L.ptr(0, 0), L.spacing());
+    //             store(ker, L.ptr<aligned>(0, 0), L.spacing());
     //         }
 
     //         A1 = 0.;
@@ -222,6 +221,6 @@ namespace blazefeo :: testing
     //     else
     //     {
     //         std::clog << "DynamicRegisterMatrixTest.testPotrf not implemented for kernels with columns more than rows!" << std::endl;
-    //     }        
+    //     }
     // }
 }

@@ -6,6 +6,7 @@
 
 #include <blaze/util/Types.h>
 #include <blaze/system/Inline.h>
+#include <blaze/math/AlignmentFlag.h>
 
 #include <immintrin.h>
 
@@ -33,7 +34,7 @@ namespace blazefeo
         using IntrinsicType = __m256d;
         using MaskType = __m256i;
         using IntType = long long;
-        
+
         static size_t constexpr size = 4;
         static size_t constexpr registerCapacity = 16;
 
@@ -185,8 +186,8 @@ namespace blazefeo
 
     template <typename T>
     size_t constexpr SimdSize_v = SimdTraits<T>::size;
-	
-	
+
+
     template <typename T>
     size_t constexpr RegisterCapacity_v = Simd<T>::registerCapacity;
 
@@ -197,7 +198,7 @@ namespace blazefeo
     //
     //*******************************************************
 
-    template <size_t SS, typename T>
+    template <bool AF, size_t SS, typename T>
     auto load(T const * ptr);
 
 
@@ -206,16 +207,30 @@ namespace blazefeo
 
 
     template <>
-    inline auto load<4, double>(double const * ptr)
+    inline auto load<aligned, 4, double>(double const * ptr)
     {
         return _mm256_load_pd(ptr);
     }
 
 
     template <>
-    inline auto load<8, float>(float const * ptr)
+    inline auto load<unaligned, 4, double>(double const * ptr)
+    {
+        return _mm256_loadu_pd(ptr);
+    }
+
+
+    template <>
+    inline auto load<aligned, 8, float>(float const * ptr)
     {
         return _mm256_load_ps(ptr);
+    }
+
+
+    template <>
+    inline auto load<unaligned, 8, float>(float const * ptr)
+    {
+        return _mm256_loadu_ps(ptr);
     }
 
 
@@ -250,16 +265,39 @@ namespace blazefeo
     // STORE
     //
     //*******************************************************
+    template <bool AF>
+    void store(double * ptr, __m256d a);
 
-    inline void store(double * ptr, __m256d a)
+
+    template <>
+    inline void store<aligned>(double * ptr, __m256d a)
     {
         _mm256_store_pd(ptr, a);
     }
 
-    
-    inline void store(float * ptr, __m256 a)
+
+    template <>
+    inline void store<unaligned>(double * ptr, __m256d a)
+    {
+        _mm256_storeu_pd(ptr, a);
+    }
+
+
+    template <bool AF>
+    void store(float * ptr, __m256 a);
+
+
+    template <>
+    inline void store<aligned>(float * ptr, __m256 a)
     {
         _mm256_store_ps(ptr, a);
+    }
+
+
+    template <>
+    inline void store<unaligned>(float * ptr, __m256 a)
+    {
+        _mm256_storeu_ps(ptr, a);
     }
 
 
@@ -384,7 +422,7 @@ namespace blazefeo
     // COMPARE
     //
     //*******************************************************
-    
+
     template <size_t N, typename MM>
     auto cmpgt(MM a, MM b);
 

@@ -6,8 +6,8 @@
 # test
 #
 find_package(GTest 1.9.0 REQUIRED)
-find_package(Threads REQUIRED)    # required for gtest
 find_package(blaze 3.5 REQUIRED)
+find_package(LAPACK REQUIRED)
 
 # ~~~~~~~~~~ Our tests ~~~~~~~~~~~~~~
 add_executable(test-blazefeo
@@ -16,12 +16,19 @@ add_executable(test-blazefeo
     math/simd/HsumTest.cpp
 
     math/dense/StaticMatrixPointerTest.cpp
+    math/dense/StaticVectorPointerTest.cpp
     math/dense/DynamicMatrixPointerTest.cpp
+    math/dense/DynamicVectorPointerTest.cpp
+    math/dense/GerTest.cpp
     math/dense/GemmTest.cpp
     math/dense/SyrkTest.cpp
     math/dense/PotrfTest.cpp
+    math/dense/GetrfTest.cpp
+    math/dense/Getf2Test.cpp
     math/dense/TrmmTest.cpp
     math/dense/TrsvTest.cpp
+    math/dense/TrsmTest.cpp
+    math/dense/Iamax.cpp
 
     math/panel/StaticPanelMatrixTest.cpp
     math/panel/DynamicPanelMatrixTest.cpp
@@ -41,12 +48,10 @@ target_link_libraries(test-blazefeo PRIVATE
     blaze::blaze
     GTest::GTest
     GTest::Main
-    gmock
-    openblas
-    ${CMAKE_THREAD_LIBS_INIT}    # Needed for gtest
+    LAPACK::LAPACK
 )
 
-target_compile_definitions(test-blazefeo 
+target_compile_definitions(test-blazefeo
     PRIVATE "BLAZE_USER_ASSERTION=1;BLAZE_INTERNAL_ASSERTION=1"
 )
 

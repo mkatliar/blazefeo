@@ -4,13 +4,14 @@
 
 #pragma once
 
+#include <blaze/math/StorageOrder.h>
 #include <blazefeo/Blaze.hpp>
 #include <blazefeo/math/simd/Simd.hpp>
 
 
 namespace blazefeo
 {
-    template <typename T, size_t S, bool SO>
+    template <typename T, size_t S, bool SO, bool AF, bool PF>
     class StaticMatrixPointer
     {
     public:
@@ -19,64 +20,103 @@ namespace blazefeo
         using MaskType = typename Simd<std::remove_cv_t<T>>::MaskType;
 
         static bool constexpr storageOrder = SO;
+        static bool constexpr aligned = AF;
+        static bool constexpr padded = PF;
 
-        
+
+        /**
+         * @brief Create a pointer pointing to a specified element of a statically-sized matrix.
+         *
+         * @param ptr matrix element to be pointed.
+         *
+         */
         constexpr StaticMatrixPointer(T * ptr) noexcept
         :   ptr_ {ptr}
         {
+            BLAZE_USER_ASSERT(!AF || reinterpret_cast<ptrdiff_t>(ptr) % (SS * sizeof(T)) == 0, "Pointer is not aligned");
         }
 
 
         StaticMatrixPointer(StaticMatrixPointer const&) = default;
-
-
-        template <typename Other>
-        constexpr StaticMatrixPointer(StaticMatrixPointer<Other, S, SO> const& other) noexcept
-        :   ptr_ {other.ptr_}
-        {
-        }
-
-
         StaticMatrixPointer& operator=(StaticMatrixPointer const&) = default;
 
 
-        IntrinsicType load(ptrdiff_t i, ptrdiff_t j) const noexcept
+        IntrinsicType load() const noexcept
         {
-            return blazefeo::load<SS>(ptrOffset(i, j));
+            return blazefeo::load<AF, SS>(ptr_);
         }
 
 
-        IntrinsicType maskLoad(ptrdiff_t i, ptrdiff_t j, MaskType mask) const noexcept
+        IntrinsicType maskLoad(MaskType mask) const noexcept
         {
-            return blazefeo::maskload(ptrOffset(i, j), mask);
+            return blazefeo::maskload(ptr_, mask);
         }
 
 
-        IntrinsicType broadcast(ptrdiff_t i, ptrdiff_t j) const noexcept
+        IntrinsicType broadcast() const noexcept
         {
-            return blazefeo::broadcast<SS>(ptrOffset(i, j));
+            return blazefeo::broadcast<SS>(ptr_);
         }
 
 
-        void store(ptrdiff_t i, ptrdiff_t j, IntrinsicType val) const noexcept
+        void store(IntrinsicType val) const noexcept
         {
-            blazefeo::store(ptrOffset(i, j), val);
+            blazefeo::store<AF>(ptr_, val);
         }
 
 
-        void maskStore(ptrdiff_t i, ptrdiff_t j, MaskType mask, IntrinsicType val) const noexcept
+        void maskStore(MaskType mask, IntrinsicType val) const noexcept
         {
-            blazefeo::maskstore(ptrOffset(i, j), mask, val);
+            blazefeo::maskstore(ptr_, mask, val);
         }
 
 
-        StaticMatrixPointer constexpr offset(ptrdiff_t i, ptrdiff_t j) const noexcept
+        /**
+         * @brief Offset pointer by specified number of rows and columns
+         *
+         * @param i row offset
+         * @param j column offset
+         *
+         * @return offset pointer
+         */
+        StaticMatrixPointer constexpr operator()(ptrdiff_t i, ptrdiff_t j) const noexcept
         {
             return {ptrOffset(i, j)};
         }
 
 
-        StaticMatrixPointer<T, S, !SO> constexpr trans() const noexcept
+        /**
+         * @brief Get reference to the pointed value.
+         *
+         * @return reference to the pointed value
+         */
+        ElementType& operator*() noexcept
+        {
+            return *ptr_;
+        }
+
+
+        /**
+         * @brief Get const reference to the pointed value.
+         *
+         * @return const reference to the pointed value
+         */
+        ElementType& operator*() const noexcept
+        {
+            return *ptr_;
+        }
+
+
+        /**
+        * @brief Convert aligned matrix pointer to unaligned.
+        */
+        StaticMatrixPointer<T, S, SO, false, PF> constexpr operator~() const noexcept
+        {
+            return {ptr_};
+        }
+
+
+        StaticMatrixPointer<T, S, !SO, AF, PF> constexpr trans() const noexcept
         {
             return {ptr_};
         }
@@ -94,6 +134,8 @@ namespace blazefeo
                 ptr_ += spacing() * inc;
             else
                 ptr_ += inc;
+
+            BLAZE_USER_ASSERT(!AF || reinterpret_cast<ptrdiff_t>(ptr_) % (SS * sizeof(T)) == 0, "Pointer is not aligned");
         }
 
 
@@ -103,16 +145,24 @@ namespace blazefeo
                 ptr_ += spacing() * inc;
             else
                 ptr_ += inc;
+
+            BLAZE_USER_ASSERT(!AF || reinterpret_cast<ptrdiff_t>(ptr_) % (SS * sizeof(T)) == 0, "Pointer is not aligned");
+        }
+
+
+        T * get() const noexcept
+        {
+            return ptr_;
         }
 
 
     private:
         static size_t constexpr SS = Simd<std::remove_cv_t<T>>::size;
 
-        
+
         T * ptrOffset(ptrdiff_t i, ptrdiff_t j) const noexcept
         {
-            if (SO == columnMajor)
+            if constexpr (SO == columnMajor)
                 return ptr_ + i + spacing() * j;
             else
                 return ptr_ + spacing() * i + j;
@@ -123,45 +173,45 @@ namespace blazefeo
     };
 
 
-    template <typename T, size_t S, bool SO>
-    BLAZE_ALWAYS_INLINE auto trans(StaticMatrixPointer<T, S, SO> const& p) noexcept
+    template <typename T, size_t S, bool SO, bool AF, bool PF>
+    BLAZE_ALWAYS_INLINE auto trans(StaticMatrixPointer<T, S, SO, AF, PF> const& p) noexcept
     {
         return p.trans();
     }
 
 
-    // NOTE:
-    // IsStatic_v<...> for adapted static matrix types such as 
-    // e.g. SymmetricMatrix<StaticMatrix<...>> evaluates to false;
-    // therefore ptr() for these types will return a DynamicMatrixPointer,
-    // which is not performance-optimal.
-    //
-    // See this issue: https://bitbucket.org/blaze-lib/blaze/issues/368
-    //
-
-    template <typename MT, bool SO>
-        requires IsStatic_v<MT>
-    BLAZE_ALWAYS_INLINE StaticMatrixPointer<ElementType_t<MT>, MT::spacing(), SO>
+    template <bool AF, typename MT, bool SO>
+    requires IsStatic_v<MT>
+    BLAZE_ALWAYS_INLINE StaticMatrixPointer<ElementType_t<MT>, MT::spacing(), SO, AF, IsPadded_v<MT>>
         ptr(DenseMatrix<MT, SO>& m, size_t i, size_t j)
     {
-        return {&(*m)(i, j)};
+        if constexpr (SO == columnMajor)
+            return {(*m).data() + i + MT::spacing() * j};
+        else
+            return {(*m).data() + MT::spacing() * i + j};
     }
 
 
-    template <typename MT, bool SO>
-        requires IsStatic_v<MT>
-    BLAZE_ALWAYS_INLINE StaticMatrixPointer<ElementType_t<MT> const, MT::spacing(), SO>
+    template <bool AF, typename MT, bool SO>
+    requires IsStatic_v<MT>
+    BLAZE_ALWAYS_INLINE StaticMatrixPointer<ElementType_t<MT> const, MT::spacing(), SO, AF, IsPadded_v<MT>>
         ptr(DenseMatrix<MT, SO> const& m, size_t i, size_t j)
     {
-        return {&(*m)(i, j)};
+        if constexpr (SO == columnMajor)
+            return {(*m).data() + i + MT::spacing() * j};
+        else
+            return {(*m).data() + MT::spacing() * i + j};
     }
 
 
-    template <typename MT, bool SO>
-        requires IsStatic_v<MT>
-    BLAZE_ALWAYS_INLINE StaticMatrixPointer<ElementType_t<MT> const, MT::spacing(), SO>
+    template <bool AF, typename MT, bool SO>
+    requires IsStatic_v<MT>
+    BLAZE_ALWAYS_INLINE StaticMatrixPointer<ElementType_t<MT> const, MT::spacing(), SO, AF, IsPadded_v<MT>>
         ptr(DMatTransExpr<MT, SO> const& m, size_t i, size_t j)
     {
-        return {&(*m)(i, j)};
+        if constexpr (SO == columnMajor)
+            return {(*m).data() + j + MT::spacing() * i};
+        else
+            return {(*m).data() + MT::spacing() * j + i};
     }
 }

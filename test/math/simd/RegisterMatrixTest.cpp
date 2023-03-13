@@ -4,8 +4,8 @@
 
 #include <blazefeo/math/simd/RegisterMatrix.hpp>
 #include <blazefeo/math/StaticPanelMatrix.hpp>
-#include <blazefeo/math/dense/DynamicMatrixPointer.hpp>
-#include <blazefeo/math/dense/StaticMatrixPointer.hpp>
+#include <blazefeo/math/dense/MatrixPointer.hpp>
+#include <blazefeo/math/dense/VectorPointer.hpp>
 #include <blazefeo/math/views/submatrix/Panel.hpp>
 
 #include <test/Testing.hpp>
@@ -32,11 +32,11 @@ namespace blazefeo :: testing
         RegisterMatrix<float, 16, 4, columnMajor>,
         RegisterMatrix<float, 24, 4, columnMajor>
     >;
-        
-        
+
+
     TYPED_TEST_SUITE(RegisterMatrixTest, MyTypes);
 
-    
+
     TYPED_TEST(RegisterMatrixTest, testDefaultCtor)
     {
         using RM = TypeParam;
@@ -44,7 +44,7 @@ namespace blazefeo :: testing
         using ET = ElementType_t<RM>;
 
         RM ker;
-        
+
         for (size_t i = 0; i < ker.rows(); ++i)
             for (size_t j = 0; j < ker.columns(); ++j)
                 ASSERT_EQ(ker(i, j), ET(0.));
@@ -94,7 +94,7 @@ namespace blazefeo :: testing
     }
 
 
-    TYPED_TEST(RegisterMatrixTest, testPartialLoad)
+    TYPED_TEST(RegisterMatrixTest, testPartialLoadPanel)
     {
         using RM = TypeParam;
         using Traits = RegisterMatrixTraits<RM>;
@@ -113,14 +113,45 @@ namespace blazefeo :: testing
 
                 for (size_t i = 0; i < m; ++i)
                     for (size_t j = 0; j < n; ++j)
-                        ASSERT_EQ(ker(i, j), beta * A(i, j)) 
+                        ASSERT_EQ(ker(i, j), beta * A(i, j))
                         << "load error for size (" << m << ", " << n << "); "
                         << "element mismatch at (" << i << ", " << j << ")" ;
             }
         }
     }
-	
-	
+
+
+    TYPED_TEST(RegisterMatrixTest, testPartialLoadDense)
+    {
+        using RM = TypeParam;
+        using Traits = RegisterMatrixTraits<RM>;
+        using ET = ElementType_t<RM>;
+
+        StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> A;
+        for (size_t i = 0; i < rows(A); ++i)
+            for (size_t j = 0; j < columns(A); ++j)
+                (*A)(i, j) = 1000 * i + j;
+
+        for (size_t m = 1; m <= rows(A); ++m)
+        {
+            for (size_t n = 1; n <= columns(A); ++n)
+            {
+                RM ker;
+                ET const beta = 0.1;
+
+                // Use lower right corner of the matrix to make sure that we don't read beyond the array bounds.
+                ker.load(beta, ptr<unaligned>(A, rows(A) - m, columns(A) - n), m, n);
+
+                for (size_t i = 0; i < m; ++i)
+                    for (size_t j = 0; j < n; ++j)
+                        ASSERT_EQ(ker(i, j), beta * A(rows(A) - m + i, columns(A) - n + j))
+                        << "load error for size (" << m << ", " << n << "); "
+                        << "element mismatch at (" << i << ", " << j << ")" ;
+            }
+        }
+    }
+
+
     TYPED_TEST(RegisterMatrixTest, testLoadStore)
     {
         using RM = TypeParam;
@@ -156,8 +187,8 @@ namespace blazefeo :: testing
         randomize(A);
 
         RM ker;
-        ker.load(1., ptr(A, 0, 0));
-        ker.store(ptr(B, 0, 0));
+        ker.load(1., ptr<aligned>(A, 0, 0));
+        ker.store(ptr<aligned>(B, 0, 0));
 
         for (size_t i = 0; i < Traits::rows; ++i)
             for (size_t j = 0; j < Traits::columns; ++j)
@@ -174,8 +205,8 @@ namespace blazefeo :: testing
 
         DynamicMatrix<ET, StorageOrder_v<RM>> A(ker.rows(), ker.columns());
         randomize(A);
-        
-        ker.load(1., ptr(A, 0, 0));
+
+        ker.load(1., ptr<aligned>(A, 0, 0));
         // store2(ker, B.data(), B.spacing());
 
         EXPECT_EQ(ker, A);
@@ -198,9 +229,9 @@ namespace blazefeo :: testing
 
         DynamicMatrix<ET, StorageOrder_v<RM>> B(ker.rows(), ker.columns());
         reset(B);
-        
-        ker.load(1., ptr(A, 0, 0));
-        ker.store(ptr(B, 0, 0));
+
+        ker.load(1., ptr<aligned>(A, 0, 0));
+        ker.store(ptr<aligned>(B, 0, 0));
 
         EXPECT_EQ(B, A);
     }
@@ -215,8 +246,8 @@ namespace blazefeo :: testing
 
         StaticMatrix<ET, ker.rows(), ker.columns(), StorageOrder_v<RM>> A;
         randomize(A);
-        
-        ker.load(1., ptr(A, 0, 0));
+
+        ker.load(1., ptr<aligned>(A, 0, 0));
 
         EXPECT_EQ(ker, A);
     }
@@ -232,9 +263,9 @@ namespace blazefeo :: testing
         StaticMatrix<ET, ker.rows(), ker.columns(), StorageOrder_v<RM>> A, B;
         randomize(A);
         reset(B);
-        
-        ker.load(1., ptr(A, 0, 0));
-        ker.store(ptr(B, 0, 0));
+
+        ker.load(1., ptr<aligned>(A, 0, 0));
+        ker.store(ptr<aligned>(B, 0, 0));
 
         EXPECT_EQ(B, A);
     }
@@ -265,7 +296,7 @@ namespace blazefeo :: testing
 
                     for (size_t i = 0; i < Traits::rows; ++i)
                         for (size_t j = 0; j < Traits::columns; ++j)
-                            ASSERT_EQ(B(i, j), i < m && j < n ? A_ref(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), " 
+                            ASSERT_EQ(B(i, j), i < m && j < n ? A_ref(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), "
                                 << "store size = " << m << "x" << n;
                 }
             }
@@ -282,17 +313,17 @@ namespace blazefeo :: testing
         randomize(A);
 
         RM ker;
-        ker.load(1., ptr(A, 0, 0));
+        ker.load(1., ptr<aligned>(A, 0, 0));
 
         for (size_t m = 0; m <= Traits::rows; ++m)
             for (size_t n = 0; n <= Traits::columns; ++n)
             {
                 B = 0.;
-                ker.store(ptr(B, 0, 0), m, n);
+                ker.store(ptr<aligned>(B, 0, 0), m, n);
 
                 for (size_t i = 0; i < Traits::rows; ++i)
                     for (size_t j = 0; j < Traits::columns; ++j)
-                        ASSERT_EQ(B(i, j), i < m && j < n ? A(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), " 
+                        ASSERT_EQ(B(i, j), i < m && j < n ? A(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), "
                             << "store size = " << m << "x" << n;
             }
     }
@@ -328,58 +359,34 @@ namespace blazefeo :: testing
         ker.load(1., C.ptr(0, 0), spacing(C));
         ger<A.storageOrder, !B.storageOrder>(ker, ET(1.), A.ptr(0, 0), A.spacing(), B.ptr(0, 0), B.spacing());
         ker.store(D.ptr(0, 0), spacing(D));
-        
+
         md = D;
 
         BLAZEFEO_EXPECT_EQ(md, evaluate(mc + ma * trans(mb)));
     }
-	
-	
-    TYPED_TEST(RegisterMatrixTest, testGerCc)
+
+
+    TYPED_TEST(RegisterMatrixTest, testGer)
     {
         using RM = TypeParam;
         using Traits = RegisterMatrixTraits<RM>;
         using ET = ElementType_t<RM>;
 
-        DynamicMatrix<ET, columnMajor> A(Traits::rows, 1);
-        DynamicMatrix<ET, columnMajor> B(1, Traits::columns);
+        DynamicVector<ET, columnVector> a(Traits::rows);
+        DynamicVector<ET, rowVector> b(Traits::columns);
         StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> C;
 
-        randomize(A);
-        randomize(B);
+        randomize(a);
+        randomize(b);
         randomize(C);
         ET alpha {};
         blaze::randomize(alpha);
 
         TypeParam ker;
-        ker.load(1., ptr(C, 0, 0));
-        ker.ger(alpha, ptr(A, 0, 0), ptr(B, 0, 0));
+        ker.load(1., ptr(C));
+        ker.ger(alpha, ptr(a), ptr(b));
 
-        BLAZEFEO_EXPECT_APPROX_EQ(ker, evaluate(C + alpha * A * B), absTol<ET>(), relTol<ET>());
-    }
-
-
-    TYPED_TEST(RegisterMatrixTest, testGerCr)
-    {
-        using RM = TypeParam;
-        using Traits = RegisterMatrixTraits<RM>;
-        using ET = ElementType_t<RM>;
-
-        DynamicMatrix<ET, columnMajor> A(Traits::rows, 1);
-        DynamicMatrix<ET, rowMajor> B(1, Traits::columns);
-        StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> C;
-
-        randomize(A);
-        randomize(B);
-        randomize(C);
-        ET alpha {};
-        blaze::randomize(alpha);
-
-        TypeParam ker;
-        ker.load(1., ptr(C, 0, 0));
-        ker.ger(alpha, ptr(A, 0, 0), ptr(B, 0, 0));
-
-        BLAZEFEO_EXPECT_APPROX_EQ(ker, evaluate(C + alpha * A * B), absTol<ET>(), relTol<ET>());
+        BLAZEFEO_EXPECT_APPROX_EQ(ker, evaluate(C + alpha * a * b), absTol<ET>(), relTol<ET>());
     }
 
 
@@ -396,7 +403,7 @@ namespace blazefeo :: testing
         randomize(ma);
         randomize(mb);
         randomize(mc);
-        
+
         StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> const D_ref = ma * trans(mb) + mc;
 
         StaticPanelMatrix<ET, Traits::rows, 1, columnMajor> A;
@@ -421,7 +428,7 @@ namespace blazefeo :: testing
 
                 for (size_t i = 0; i < m; ++i)
                     for (size_t j = 0; j < n; ++j)
-                        ASSERT_EQ(ker(i, j), i < m && j < n ? D_ref(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), " 
+                        ASSERT_EQ(ker(i, j), i < m && j < n ? D_ref(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), "
                             << "store size = " << m << "x" << n;
             }
         }
@@ -434,31 +441,28 @@ namespace blazefeo :: testing
         using Traits = RegisterMatrixTraits<RM>;
         using ET = ElementType_t<RM>;
 
-        DynamicMatrix<ET, columnMajor> A(Traits::rows, 1);
-        DynamicMatrix<ET, columnMajor> B(Traits::columns, 1);
+        DynamicVector<ET, columnVector> a(Traits::rows);
+        DynamicVector<ET, columnVector> b(Traits::columns);
         StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> C;
 
-        randomize(A);
-        randomize(B);
+        randomize(a);
+        randomize(b);
         randomize(C);
 
-        StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> const D_ref = A * trans(B) + C;
-        
-        // std::cout << "A=\n" << A << std::endl;
-        // std::cout << "B=\n" << B << std::endl;
-        // std::cout << "C=\n" << C << std::endl;
+        StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> const D_ref = a * trans(b) + C;
 
         for (size_t m = 0; m <= rows(C); ++m)
         {
             for (size_t n = 0; n <= columns(C); ++n)
             {
                 TypeParam ker;
-                ker.load(1., ptr(C, 0, 0));
-                ker.ger(ET(1.), ptr(A, 0, 0), ptr(trans(B), 0, 0), m, n);
+                ker.load(1., ptr(C));
+                ker.ger(ET(1.), ptr(a), ptr(trans(b)), m, n);
 
                 for (size_t i = 0; i < m; ++i)
                     for (size_t j = 0; j < n; ++j)
-                        ASSERT_EQ(ker(i, j), i < m && j < n ? D_ref(i, j) : 0.) << "element mismatch at (" << i << ", " << j << "), " 
+                        BLAZEFEO_ASSERT_APPROX_EQ(ker(i, j), D_ref(i, j), absTol<ET>(), relTol<ET>())
+                            << "element mismatch at (" << i << ", " << j << "), "
                             << "store size = " << m << "x" << n;
             }
         }
@@ -471,25 +475,20 @@ namespace blazefeo :: testing
         using Traits = RegisterMatrixTraits<RM>;
         using ET = ElementType_t<RM>;
 
-        DynamicMatrix<ET, columnMajor> A(Traits::rows, 1);
-        DynamicMatrix<ET, columnMajor> B(Traits::columns, 1);
+        DynamicVector<ET, columnVector> a(Traits::rows);
+        DynamicVector<ET, columnVector> b(Traits::columns);
         StaticMatrix<ET, Traits::rows, Traits::columns, columnMajor> C, D;
 
-        randomize(A);
-        randomize(B);
+        randomize(a);
+        randomize(b);
         randomize(C);
 
-        // std::cout << "A=\n" << A << std::endl;
-        // std::cout << "B=\n" << B << std::endl;
-        // std::cout << "C=\n" << C << std::endl;
-
         TypeParam ker;
-        ker.load(1., ptr(C, 0, 0));
-        // ger2<A.storageOrder, !B.storageOrder>(ker, ET(1.), A.data(), A.spacing(), B.data(), B.spacing());
-        ker.ger(ET(1.), ptr(A, 0, 0), ptr(trans(B), 0, 0));
-        ker.store(ptr(D, 0, 0));
+        ker.load(1., ptr(C));
+        ker.ger(ET(1.), ptr(a), ptr(trans(b)));
+        ker.store(ptr(D));
 
-        BLAZEFEO_EXPECT_EQ(D, evaluate(C + A * trans(B)));
+        BLAZEFEO_EXPECT_EQ(D, evaluate(C + a * trans(b)));
     }
 
 
@@ -499,7 +498,7 @@ namespace blazefeo :: testing
         using ET = typename Traits::ElementType;
         static size_t constexpr m = Traits::rows;
         static size_t constexpr n = Traits::columns;
-        
+
         if constexpr (m >= n)
         {
             StaticPanelMatrix<ET, m, n, columnMajor> A, L;
@@ -535,7 +534,7 @@ namespace blazefeo :: testing
         else
         {
             std::clog << "RegisterMatrixTest.testPotrf not implemented for kernels with columns more than rows!" << std::endl;
-        }        
+        }
     }
 
 
@@ -549,8 +548,8 @@ namespace blazefeo :: testing
 
         using blaze::randomize;
         StaticPanelMatrix<ET, Traits::columns, Traits::columns, columnMajor> L;
-        StaticPanelMatrix<ET, Traits::rows, Traits::columns, columnMajor> B, X, B1;            
-        
+        StaticPanelMatrix<ET, Traits::rows, Traits::columns, columnMajor> B, X, B1;
+
         for (size_t i = 0; i < Traits::columns; ++i)
             for (size_t j = 0; j < Traits::columns; ++j)
                 if (j <= i)
@@ -578,14 +577,14 @@ namespace blazefeo :: testing
 
         // True value
         XX = evaluate(BB * inv(trans(LL)));
-        
+
         load(ker, B.ptr(0, 0), B.spacing());
         trsm<false, false, true>(ker, L.ptr(0, 0), spacing(L));
         store(ker, X.ptr(0, 0), X.spacing());
 
         // std::cout << "X=\n" << X << std::endl;
         // std::cout << "XX=\n" << XX << std::endl;
-        
+
         // TODO: should be strictly equal?
         BLAZEFEO_ASSERT_APPROX_EQ(X, XX, absTol<ET>(), relTol<ET>());
     }
@@ -600,8 +599,8 @@ namespace blazefeo :: testing
 
         using blaze::randomize;
         StaticMatrix<ET, RM::columns(), RM::columns(), columnMajor> L;
-        StaticMatrix<ET, RM::rows(), RM::columns(), columnMajor> B, B1;            
-        
+        StaticMatrix<ET, RM::rows(), RM::columns(), columnMajor> B, B1;
+
         for (size_t i = 0; i < RM::columns(); ++i)
             for (size_t j = 0; j < RM::columns(); ++j)
                 if (j <= i)
@@ -615,8 +614,8 @@ namespace blazefeo :: testing
 
         randomize(B);
 
-        ker.load(1., ptr(B, 0, 0));
-        ker.trsmRightUpper(trans(ptr(L, 0, 0)));
+        ker.load(1., ptr(B));
+        ker.trsmRightUpper(trans(ptr(L)));
 
         // TODO: should be strictly equal?
         BLAZEFEO_ASSERT_APPROX_EQ(ker, evaluate(B * inv(trans(L))), absTol<ET>(), relTol<ET>());
@@ -639,7 +638,7 @@ namespace blazefeo :: testing
         blaze::randomize(alpha);
 
         RM ker;
-        ker.trmmLeftUpper(alpha, ptr(A, 0, 0), ptr(B, 0, 0));
+        ker.trmmLeftUpper(alpha, ptr(A), ptr(B));
 
         // Reset lower-triangular part
         for (size_t i = 0; i < A.rows(); ++i)
@@ -667,7 +666,7 @@ namespace blazefeo :: testing
         blaze::randomize(alpha);
 
         RM ker;
-        ker.trmmRightLower(alpha, ptr(B, 0, 0), ptr(A, 0, 0));
+        ker.trmmRightLower(alpha, ptr(B), ptr(A));
 
         // Reset upper-triangular part
         for (size_t i = 0; i < A.rows(); ++i)
